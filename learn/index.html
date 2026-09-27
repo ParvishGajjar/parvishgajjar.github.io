@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How AI Works · a learning series by Parvish Gajjar</title>
+  <meta name="description" content="How AI Works: a learning series by Parvish Gajjar. Each chapter is a music video, a chapter you can read or listen to, a real trained model you can try, and a hands-on lab, with credits to the research behind it.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="How AI Works — a learning series by Parvish Gajjar">
+  <meta property="og:description" content="From a single neuron to transformers and fine-tuning your own model. Watch, read or listen, try, build.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s1/c1/media/f5-network.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+  <main class="lp">
+    <section class="hub-hero">
+      <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span><span>A learning series</span><span class="eyebrow-sep">·</span><span>by Parvish Gajjar</span></p>
+      <h1>How AI <span class="serif-accent">works.</span></h1>
+      <p class="lede">From a single artificial neuron to transformers, and all the way to fine-tuning a model of your own. Each chapter is a music video, a chapter you can read or listen to like a podcast, and the real model running in your browser. The science belongs to the researchers credited in each chapter; this series is the delivery.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="/learn/s1/c1/" id="startBtn">Start with Chapter 1</a>
+        <a class="button button-secondary" href="#seasons">See all seasons</a>
+      </div>
+    </section>
+
+    <section id="seasons">
+      <p class="section-kicker"><span class="kicker-bar"></span>Seasons</p>
+      <h2>From one neuron to <span class="serif-accent">your own model</span>.</h2>
+      <p class="lede muted">Chapters come out one at a time.</p>
+      <div id="seasonList"></div>
+      <noscript><p><a class="inline" href="/learn/s1/c1/">Season 1 · Chapter 1: What a Neuron Computes</a></p></noscript>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · built on <a class="inline" href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">mexicat/pdoom-video</a> (MIT)</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=2"></script>
+  <script>
+    (() => {
+      const S = window.SERIES, root = document.getElementById('seasonList');
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      root.innerHTML = S.seasons.map((s) => {
+        const live = s.chapters.filter((c) => c.status === 'live').length;
+        return `<div class="season"><div class="season-head"><h3>Season ${s.n} · ${esc(s.title)}</h3><span>${live ? `${live} of ${s.chapters.length} out` : 'Coming'}</span></div>
+          <p class="muted" style="margin:-0.3rem 0 1rem">${esc(s.blurb)}</p>
+          <div class="chapters">${s.chapters.map((c) => {
+            const state = c.status === 'live' ? 'Out now' : c.status === 'next' ? 'Up next' : 'Planned';
+            const inner = `${c.thumb ? `<div class="thumb"><img src="${c.thumb}" alt="" loading="lazy"></div>` : ''}
+              <span class="n">S${s.n} · CH ${c.n}${c.song ? ` · “${esc(c.song)}”` : ''}</span><h4>${esc(c.title)}</h4><p>${esc(c.blurb)}</p><span class="state">${state}</span>`;
+            return c.status === 'live' ? `<a class="ch glass live" href="${c.url}">${inner}</a>` : `<div class="ch glass soon">${inner}</div>`;
+          }).join('')}</div></div>`;
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

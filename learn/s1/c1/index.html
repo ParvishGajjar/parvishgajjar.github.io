@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What a Neuron Computes · How AI Works, Season 1 Chapter 1 · Parvish Gajjar</title>
+  <meta name="description" content="How AI Works, Season 1 Chapter 1: how a handwritten 7 becomes 784 numbers, and how one artificial neuron turns them into a decision. Read or listen, watch the music video, and try the real network.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="What a Neuron Computes — How AI Works, S1·C1">
+  <meta property="og:description" content="A learning series by Parvish Gajjar: a music video, a chapter you can read or listen to, and a real trained network you can draw into.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/s1/c1/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s1/c1/media/f3-weights.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/s1/c1/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+  <main class="lp">
+    <!-- ============================================================ hero -->
+    <section class="c-hero">
+      <p class="section-kicker"><span class="kicker-bar"></span><a href="/learn/">How AI Works</a> · Season 1 · Chapter 1</p>
+      <h1>What a Neuron <span class="serif-accent">Computes</span></h1>
+      <p class="song-tag"><small>Music video</small>“Seven Hundred Eighty-Four”</p>
+      <p class="lede">How a picture of a handwritten 7 becomes 784 numbers, and how one small piece of arithmetic, repeated, turns those numbers into an answer.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#video">Watch the video</a>
+        <a class="button button-secondary" href="#chapter">Listen to the chapter · 11 min</a>
+      </div>
+    </section>
+
+    <!-- ============================================================ video -->
+    <section id="video" style="border-top:0;padding-top:0">
+      <div class="player" id="player">
+        <video id="mv" src="media/s1c1.mp4" poster="media/poster.jpg" controls playsinline preload="metadata" aria-label="Music video: Seven Hundred Eighty-Four"></video>
+      </div>
+    </section>
+
+    <!-- ============================================================ the chapter (read or listen) -->
+    <section id="chapter">
+      <p class="section-kicker"><span class="kicker-bar"></span>The chapter</p>
+      <h2>Read it, or press play and <span class="serif-accent">listen</span>.</h2>
+
+      <div class="listen glass sticky" id="listen" data-state="loading">
+        <button class="listen-btn" id="listenBtn" type="button" aria-label="Play the chapter">
+          <svg id="icoPlay" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>
+          <svg id="icoPause" viewBox="0 0 16 16" aria-hidden="true" hidden><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+        </button>
+        <div class="listen-body">
+          <div class="listen-title"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="listenNow">Listen to this chapter</span><span id="listenTime">—</span></div>
+          <div class="listen-bar" id="listenBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="listenFill"></i></div>
+        </div>
+        <button class="listen-speed" id="listenSpeed" type="button" aria-label="Playback speed">1×</button>
+        <audio id="narration" preload="none" src="audio/chapter.mp3"></audio>
+      </div>
+
+      <article class="story lp-read" id="story">
+        <p>Look at a handwritten seven. You recognise it before you've even thought about it. A computer can't look at anything. What it gets is a list of 784 numbers. This chapter is about what happens between those two things: how a network made of very simple parts turns 784 numbers into the answer “seven”.</p>
+        <p>By the end you'll know what a neuron computes, what weights and biases are, what ReLU means, and why this small piece of arithmetic sits inside everything from a digit reader to ChatGPT.</p>
+
+        <h2 id="pixels">A picture is a grid of numbers</h2>
+        <p>The seven in the video comes from <strong class="term">MNIST</strong>, a collection of 70,000 handwritten digits that researchers put together in the 1990s. It's the traditional first dataset in machine learning: small enough to understand completely, hard enough to be interesting.</p>
+        <p data-say="Each digit is a square of 28 by 28 tiny squares called pixels. 28 times 28 is 784. Each pixel is stored as one number, its brightness, from 0 for black to 1 for white, with greys in between.">Each digit is a square of 28 × 28 tiny squares called <strong class="term">pixels</strong>. 28 × 28 is 784. Each pixel is stored as one number, its brightness, from 0 for black to 1 for white, with greys in between.</p>
+        <span class="real" data-say="Our seven is test image number 328. Only 137 of its 784 pixels are above zero. The other 647 are pure black.">Our 7 is test image #328. Only 137 of its 784 pixels are above zero; the other 647 are pure black.</span>
+        <p>That's everything the network receives. It has no idea what a line or a curve is. It only has these numbers.</p>
+
+        <h2 id="vector">Line them up: a vector</h2>
+        <p data-say="The network doesn't take the picture as a square. It takes one long list: the first row of 28 pixels, then the second row after it, and so on until all 784 are in a line. A list of numbers kept in a fixed order is called a vector, and we'll call this one x.">The network doesn't take the picture as a square. It takes one long list: the first row of 28 pixels, then the second row after it, and so on until all 784 are in a line. A list of numbers kept in a fixed order is called a <strong class="term">vector</strong>, and we'll call this one <em>x</em>.</p>
+        <p>One consequence is worth noticing. Once the picture is flattened, the network isn't told which pixels were neighbours. Anything it knows about shape, it has to learn.</p>
+
+        <h2 id="neuron">A neuron is a weighted vote</h2>
+        <p>An artificial <strong class="term">neuron</strong> is a tiny calculator with one job: look at all 784 numbers and produce one number back.</p>
+        <p>To do that, it keeps one number of its own for every pixel, called a <strong class="term">weight</strong>. A weight is how much the neuron cares about that pixel, and in which direction. A positive weight means “brightness here is evidence for me”. A negative weight means “brightness here is evidence against me”. A weight near zero means “I don't care about this spot”.</p>
+        <p>The neuron multiplies every pixel by its weight and adds the 784 results together. That total is called the <strong class="term">weighted sum</strong>. Because black pixels are zero, anything multiplied by them is zero too, so only the ink actually counts.</p>
+        <p>Then it adds one more number of its own, the <strong class="term">bias</strong>. The bias sets how easily the neuron is convinced: a positive bias gives it a head start, a negative one makes it harder to win over. Written as maths, the whole thing is one line:</p>
+        <span class="eq" data-say="z equals w dot x, plus b.">z = w · x + b</span>
+        <p data-say="w is the neuron's 784 weights, x is the 784 pixels, and b is the bias. The dot means multiply each pair, then add them all up. The result, z, is the neuron's score for this image."><em>w</em> is the neuron's 784 weights, <em>x</em> is the 784 pixels, and <em>b</em> is the bias. The dot means “multiply each pair, then add them all up”. The result, <em>z</em>, is the neuron's score for this image.</p>
+        <span class="real" data-say="For our seven, neuron number 6's positive contributions add up to 9.18, its negative ones to minus 3.26, and its bias is 0.007. So its score is 5.93.">Neuron 6: positive contributions +9.18, negative −3.26, bias +0.007 → z = 5.93</span>
+        <div class="aside" data-say="Why is it called a neuron? Brain cells receive signals from many other cells, and fire when enough arrive. Warren McCulloch and Walter Pitts wrote down a mathematical version of that in 1943. The resemblance ends there. An artificial neuron is multiply, add, and one more step."><b>Why “neuron”?</b> Brain cells receive signals from many other cells and fire when enough arrive. Warren McCulloch and Walter Pitts wrote down a mathematical version of that in 1943. The resemblance ends there: an artificial neuron is multiply, add, and one more step.</div>
+
+        <h2 id="relu">ReLU: the one rule that bends</h2>
+        <p data-say="That one more step is called an activation function. It decides what the neuron actually passes on. The one in this chapter is called ReLU, pronounced ray-loo. It's short for Rectified Linear Unit.">That one more step is called an <strong class="term">activation function</strong>. It decides what the neuron actually passes on. The one in this chapter is called <strong class="term">ReLU</strong>, short for <em>Rectified Linear Unit</em>.</p>
+        <p data-say="ReLU's rule fits in one sentence. If the score is negative, pass on zero. Otherwise, pass it on unchanged. Rectified is an old electrical word: a rectifier lets current through in one direction only. Linear is because whatever does get through isn't changed.">ReLU's rule fits in one sentence: <strong>if the score is negative, pass on zero; otherwise, pass it on unchanged.</strong> “Rectified” is an old electrical word; a rectifier lets current through in one direction only. “Linear” is because whatever does get through isn't changed.</p>
+        <span class="real" data-say="Neuron 6 scored 5.93, so it passes on 5.93. Neuron 10 scored minus 2.86, so it passes on zero. It stays silent for this seven.">Neuron 6: 5.93 → 5.93 · Neuron 10: −2.86 → 0 (silent for this 7)</span>
+        <p>Why bother with such a simple rule? Because without it, the network can only ever draw straight lines. Multiplying and adding, then multiplying and adding again, always collapses into one single multiply-and-add, no matter how many layers you stack. ReLU's bend at zero breaks that. Put many bent pieces together and you can build curves; put enough together and you can draw almost any shape you need, including the complicated boundary between “looks like a 7” and “looks like a 1”. Mathematicians proved this in 1989 and 1991; it's called the <em>universal approximation</em> result.</p>
+        <span class="real" data-say="In the video's bridge, the best possible straight line misses the curve with an error of 0.657. With nine bends, the error drops to 0.002.">Best straight line: error 0.657 · the same curve with 9 bends: error 0.002</span>
+
+        <h2 id="layers">Layers, and one big multiplication</h2>
+        <p>One neuron asks one question of the image. A <strong class="term">layer</strong> is a group of neurons all looking at the same input, each with its own weights, so each asks a different question. Our first layer has 16 neurons.</p>
+        <p data-say="Stack the 16 lists of weights on top of each other and you get a grid of numbers, 16 rows by 784 columns, called a matrix, and written as capital W. Now the whole layer is one line of maths: z equals W x plus b, then ReLU on each result.">Stack the 16 lists of weights on top of each other and you get a grid of numbers, 16 rows by 784 columns, called a <strong class="term">matrix</strong> and written <em>W</em>. Now the whole layer is one line of maths: <em>z = Wx + b</em>, then ReLU on each result.</p>
+        <p data-say="Multiplying a matrix by a vector is the single most common operation in all of AI. It's exactly what graphics cards, G P Us, are built to do very fast, which is why AI runs on them.">Multiplying a matrix by a vector is the single most common operation in all of AI. It's exactly what graphics cards, GPUs, are built to do very fast, which is why AI runs on them.</p>
+        <p data-say="Our network has four layers of numbers: 784 pixels, then 16 neurons, then another 16, then 10 at the end. Each layer's output is the next layer's input. It's the same shape Grant Sanderson uses in the 3 Blue 1 Brown video, But what is a neural network, which is a wonderful companion to this chapter.">Our network has four layers of numbers: 784 pixels, then 16 neurons, then another 16, then 10 at the end. Each layer's output is the next layer's input. It's the same shape Grant Sanderson uses in 3Blue1Brown's <em>But what is a neural network?</em>, which is a wonderful companion to this chapter.</p>
+        <span class="real" data-say="For our seven, 9 of the 16 neurons in the first layer fire, and 14 of the 16 in the second.">For this 7: 9 of 16 first-layer neurons fire; 14 of 16 in the second layer</span>
+
+        <h2 id="answer">Ten lights: the answer</h2>
+        <p>The last layer has ten neurons, one for each digit from 0 to 9. Their raw scores go through <strong class="term">softmax</strong>, a function that turns any list of scores into <em>probabilities</em>: numbers between 0 and 1 that add up to exactly 1. The biggest one is the network's answer. Softmax gets a proper look in Chapter 3.</p>
+        <span class="real" data-say="The network says seven, with probability 0.995. It's 99.5 percent sure.">“7” with probability 0.995</span>
+
+        <h2 id="learned">Nobody wrote the weights</h2>
+        <p data-say="Count every weight and bias in this network and you get 13,002 numbers, called its parameters. No person chose a single one of them.">Count every weight and bias in this network and you get 13,002 numbers, called its <strong class="term">parameters</strong>. No person chose a single one of them.</p>
+        <p data-say="They started as random numbers. Then the network was shown 60,000 labelled training digits, 64 at a time, and after each group every parameter was nudged slightly in whichever direction made the network a little less wrong. That's training. It took 7,504 nudges: eight full passes through the training digits. Each full pass is called an epoch.">They started as random numbers. Then the network was shown 60,000 labelled training digits, 64 at a time, and after each group every parameter was nudged slightly in whichever direction made the network a little less wrong. That's <strong class="term">training</strong>. It took 7,504 nudges: eight full passes through the training digits. Each full pass is called an <strong class="term">epoch</strong>.</p>
+        <span class="real" data-say="Tested on 10,000 digits it had never seen, the network got 93.3 percent right after the first epoch, and 95.2 percent after eight. Guessing at random would get about 10 percent.">Test accuracy on 10,000 unseen digits: 93.3% after epoch 1 → 95.2% after epoch 8 (random guessing: 10%)</span>
+        <p data-say="How does the network know which way to nudge each of its 13,002 numbers? That's the question for Chapter 2. Its answer, called backpropagation, is how every neural network, including the largest ones, learns.">How does the network know which way to nudge each of 13,002 numbers? That's the question for Chapter 2, and its answer, called <em>backpropagation</em>, is how every neural network, including the largest ones, learns.</p>
+
+        <h2 id="history">How we got here</h2>
+        <p>None of this is new. The ideas in this chapter are decades old; what changed was scale, and one invention in 2017.</p>
+        <ul class="timeline" data-say="In 1943, McCulloch and Pitts describe a mathematical neuron. In 1958, Frank Rosenblatt's perceptron learns its own weights from examples. In 1986, Rumelhart, Hinton and Williams show backpropagation training networks with several layers. In 1998, Yann LeCun's networks read handwritten digits, and MNIST is published. In 2012, a network called AlexNet, trained on graphics cards with a million images, wins the ImageNet contest by a wide margin, and deep learning takes off. In 2017, Google researchers publish a paper called Attention Is All You Need, introducing the transformer. Between 2018 and 2020 come GPT, BERT and GPT-3: transformers trained on enormous amounts of text. And in 2022, ChatGPT: a transformer, further trained to follow instructions.">
+          <li><b>1943</b>McCulloch and Pitts describe a mathematical neuron.</li>
+          <li><b>1958</b>Frank Rosenblatt's perceptron learns its own weights from examples.</li>
+          <li><b>1986</b>Rumelhart, Hinton and Williams show backpropagation training multi-layer networks (Chapter 2).</li>
+          <li><b>1998</b>Yann LeCun's networks read handwritten digits; MNIST is published.</li>
+          <li class="big"><b>2012</b>AlexNet, trained on GPUs with a million images, wins the ImageNet contest by a wide margin. Deep learning takes off.</li>
+          <li class="big"><b>2017</b>Google researchers publish “Attention Is All You Need”, introducing the <strong>transformer</strong>.</li>
+          <li><b>2018–20</b>GPT, BERT, GPT-3: transformers trained on enormous amounts of text.</li>
+          <li class="big"><b>2022</b>ChatGPT: a transformer, further trained to follow instructions (Season 3).</li>
+        </ul>
+        <p>So neural networks existed long before ChatGPT. What the transformer changed was how a network handles a sequence, such as the words of a sentence. It lets every word look directly at every other word to decide what matters, a mechanism called <em>attention</em>. And it trains efficiently on graphics cards, which made it practical to learn from vast amounts of text. That's Season 2.</p>
+
+        <h2 id="today">Where this neuron lives today</h2>
+        <p data-say="Here's the part that connects this small digit reader to the chatbots you use. A transformer is built from layers stacked on top of each other, and every layer has two parts. The first is attention. The second is called a feed-forward network, and it is exactly what you just learned: multiply by a matrix of weights, add a bias, bend, and do it again.">Here's the part that connects this small digit reader to the chatbots you use. A transformer is built from layers stacked on top of each other, and every layer has two parts. The first is attention. The second is called a <em>feed-forward network</em>, and it is exactly what you just learned: multiply by a matrix of weights, add a bias, bend, and do it again.</p>
+        <p data-say="The original 2017 transformer used ReLU for that bend. Many newer models use smoother cousins, with names like GELU and SwiGLU, but the idea is the same. A large language model repeats this block across dozens of layers, with thousands of neurons in each, and billions of parameters in total.">The original 2017 transformer used ReLU for that bend. Many newer models use smoother cousins with names like GELU and SwiGLU, but the idea is the same. A large language model repeats this block across dozens of layers, with thousands of neurons in each and billions of parameters in total.</p>
+        <p>Multiply, add, keep what's above zero. That's the whole trick, repeated at enormous scale.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ try it -->
+    <section id="try">
+      <p class="section-kicker"><span class="kicker-bar"></span>Try it · the real network, in your browser</p>
+      <h2>Be the <span class="serif-accent">neuron</span>.</h2>
+      <p class="lede">Draw a digit, or load the 7 from the video. This runs the same trained weights as the music video, entirely in your browser. Pick any of the 16 first-layer neurons to see its weights, what survives multiplying by your drawing, and its score through ReLU.</p>
+      <div class="lab-grid">
+        <div class="panel glass">
+          <h4>1 · Input</h4>
+          <p class="sub">Draw one digit, large and centred.</p>
+          <div class="pad"><canvas id="draw" width="560" height="560" aria-label="Drawing pad"></canvas><div class="hint" id="hint">draw a digit 0–9 here</div></div>
+          <div class="row">
+            <button class="button button-primary" id="load7" type="button">Load the 7 from the video</button>
+            <button class="button button-secondary" id="clear" type="button">Clear</button>
+          </div>
+        </div>
+        <div class="panel glass">
+          <h4>2 · One neuron, in full</h4>
+          <p class="sub" id="neuronSub">Choose a first-layer neuron. Filled circles are firing.</p>
+          <div class="neurons" id="neurons" role="group" aria-label="First-layer neurons"></div>
+          <div class="maps">
+            <div class="map"><canvas id="mx" width="28" height="28"></canvas><b>x · your pixels</b><span>784 numbers</span></div>
+            <div class="map"><canvas id="mw" width="28" height="28"></canvas><b>w · its weights</b><span>learned in training</span></div>
+            <div class="map"><canvas id="mp" width="28" height="28"></canvas><b>x × w</b><span>only ink counts</span></div>
+          </div>
+          <div class="legend"><span><i style="background:#f4b36a"></i>positive</span><span><i style="background:#6ee7e0"></i>negative</span><span><i style="background:#000;border:1px solid #333"></i>zero</span></div>
+          <dl class="readout">
+            <dt>positive contributions</dt><dd id="rPos">—</dd>
+            <dt>negative contributions</dt><dd id="rNeg">—</dd>
+            <dt>+ bias b</dt><dd id="rB">—</dd>
+            <dt>score z = w · x + b</dt><dd id="rZ">—</dd>
+            <dt>ReLU(z) → passed on</dt><dd id="rA" class="hot">—</dd>
+          </dl>
+          <svg class="relu" id="reluPlot" viewBox="0 0 400 130" role="img" aria-label="ReLU graph with this neuron's score marked"></svg>
+        </div>
+        <div class="panel glass lab-out">
+          <h4>3 · The ten lights</h4>
+          <p class="sub">Softmax probabilities from the last layer.</p>
+          <div class="bars" id="bars"></div>
+          <p class="verdict" id="verdict"></p>
+          <p class="sub" style="margin-top:0.8rem">A small network trained on centred, thick strokes, so it will misread some drawings. That's part of the lesson.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ build it -->
+    <section id="build">
+      <div class="two">
+        <div>
+          <p class="section-kicker"><span class="kicker-bar"></span>Build it yourself</p>
+          <h2>Train the exact network from the video.</h2>
+          <p class="lede">One Python file using only NumPy. No GPU needed. It downloads MNIST, checks the files, trains the 784 → 16 → 16 → 10 network for eight epochs with a fixed random seed, and writes out every number the video and this page use.</p>
+          <div class="row" style="margin-top:1.4rem"><a class="button button-primary" href="lab/train_net.py" download>Download train_net.py</a></div>
+        </div>
+        <div>
+<pre><span class="c"># Python 3.10+</span>
+pip install numpy
+python train_net.py
+
+<span class="c"># expected (a few minutes on a laptop CPU)</span>
+epoch 1 step 938 test acc 0.9333
+…
+epoch 8 step 7504 test acc 0.9520
+hero test[328] p(7)=0.9949 star neuron 6 z=5.927</pre>
+          <p class="muted" style="font-size:0.95rem;margin-top:1rem">Try this: delete the ReLU so every layer is a straight multiply-and-add, retrain, and watch the accuracy fall. That's “the one rule that bends”, happening on your own machine.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ credits -->
+    <section id="credits">
+      <p class="section-kicker"><span class="kicker-bar"></span>Credits</p>
+      <h2>Standing on their <span class="serif-accent">shoulders</span>.</h2>
+      <p class="lede">The ideas in this chapter belong to the researchers and teachers below. What this series adds is the delivery: the song, the visuals, the writing and a model you can inspect. If it helped, go and watch and read theirs.</p>
+      <div class="credits">
+        <div class="glass">
+          <h3>Teaching this builds on</h3>
+          <ul>
+            <li><b>Grant Sanderson · 3Blue1Brown</b><span>“But what is a neural network?” (2017). The 784-16-16-10 digit network comes from here.</span><a href="https://www.youtube.com/watch?v=aircAruvnKk" target="_blank" rel="noreferrer">youtube.com/watch?v=aircAruvnKk</a></li>
+            <li><b>Michael Nielsen</b><span><em>Neural Networks and Deep Learning</em>, chapter 1.</span><a href="http://neuralnetworksanddeeplearning.com/chap1.html" target="_blank" rel="noreferrer">neuralnetworksanddeeplearning.com</a></li>
+            <li><b>Andrej Karpathy</b><span><em>Neural Networks: Zero to Hero</em>.</span><a href="https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ" target="_blank" rel="noreferrer">YouTube playlist</a></li>
+            <li><b>Stanford CS231n</b><span>Course notes: Neural Networks, Part 1.</span><a href="https://cs231n.github.io/neural-networks-1/" target="_blank" rel="noreferrer">cs231n.github.io</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Research</h3>
+          <ul>
+            <li><b>McCulloch &amp; Pitts (1943)</b><span>The first mathematical neuron.</span><a href="https://doi.org/10.1007/BF02478259" target="_blank" rel="noreferrer">doi:10.1007/BF02478259</a></li>
+            <li><b>Rosenblatt (1958)</b><span>The perceptron.</span><a href="https://doi.org/10.1037/h0042519" target="_blank" rel="noreferrer">doi:10.1037/h0042519</a></li>
+            <li><b>Rumelhart, Hinton &amp; Williams (1986)</b><span>Learning representations by back-propagating errors.</span><a href="https://doi.org/10.1038/323533a0" target="_blank" rel="noreferrer">doi:10.1038/323533a0</a></li>
+            <li><b>LeCun, Bottou, Bengio &amp; Haffner (1998)</b><span>Document recognition; MNIST by LeCun, Cortes &amp; Burges.</span><a href="https://doi.org/10.1109/5.726791" target="_blank" rel="noreferrer">doi:10.1109/5.726791</a></li>
+            <li><b>Nair &amp; Hinton (2010) · Glorot, Bordes &amp; Bengio (2011)</b><span>Rectified linear units.</span><a href="https://proceedings.mlr.press/v15/glorot11a.html" target="_blank" rel="noreferrer">PMLR 15</a></li>
+            <li><b>Cybenko (1989) · Hornik (1991)</b><span>Universal approximation.</span><a href="https://doi.org/10.1007/BF02551274" target="_blank" rel="noreferrer">doi:10.1007/BF02551274</a></li>
+            <li><b>Krizhevsky, Sutskever &amp; Hinton (2012)</b><span>AlexNet: ImageNet classification with deep convolutional networks.</span><a href="https://doi.org/10.1145/3065386" target="_blank" rel="noreferrer">doi:10.1145/3065386</a></li>
+            <li><b>Vaswani et al. (2017)</b><span>Attention Is All You Need: the transformer.</span><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noreferrer">arXiv:1706.03762</a></li>
+            <li><b>He et al. (2015) · Kingma &amp; Ba (2014)</b><span>The initialisation and the Adam optimiser used in training.</span><a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noreferrer">arXiv:1502.01852</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Production</h3>
+          <ul>
+            <li><b>mexicat · pdoom-video</b><span>The MIT-licensed music-video engine this series is built on. Its song and lyrics are not used.</span><a href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">github.com/mexicat/pdoom-video</a></li>
+            <li><b>ACE-Step 1.5</b><span>Open-source music model (Apache-2.0) that sang our lyrics.</span><a href="https://github.com/ace-step/ACE-Step-1.5" target="_blank" rel="noreferrer">github.com/ace-step/ACE-Step-1.5</a></li>
+            <li id="credit-tts"><b>Kokoro-82M</b><span>Open-weight text-to-speech model (Apache-2.0) that narrates the chapter.</span><a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noreferrer">github.com/hexgrad/kokoro</a></li>
+            <li><b>OpenAI Whisper</b><span>Used to check every lyric is sung clearly.</span></li>
+            <li><b>Parvish Gajjar, with Claude</b><span>Lyrics, visuals, writing and the trained model.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ next -->
+    <section>
+      <div class="next glass" id="next">
+        <div>
+          <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 1 · Chapter 2</p>
+          <h3>How the network learns which way to turn each of its 13,002 dials.</h3>
+        </div>
+        <a class="button button-secondary" href="/learn/">All chapters</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · Season 1 · Chapter 1</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=2"></script>
+  <script src="chapter.js?v=2" defer></script>
+</body>
+</html>
