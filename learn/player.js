@@ -29,7 +29,7 @@
     next: '<path d="M5 5v14l10-7zM16.5 5h2.5v14h-2.5z"/>',
     vol: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15 9a4 4 0 0 1 0 6M17.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-    loop: '<path d="M7 7h9.5a3.5 3.5 0 0 1 0 7H14M17 17H7.5a3.5 3.5 0 0 1 0-7H10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M12 4.5 15 7l-3 2.5zM12 19.5 9 17l3-2.5z"/>',
+    loop: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/><path d="M13 15V9h-1l-2 1v1h1.5v4z"/>',
     fs: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
     fsx: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
   };
@@ -118,45 +118,98 @@
   const seek = ui.querySelector('.pl-seek'), fill = seek.querySelector('b'), knob = seek.querySelector('u'), time = ui.querySelector('.pl-time'), vol = ui.querySelector('.pl-vol');
 
   // ---------------------------------------------------------------- behaviour
-  const toggle = () => (video.paused || video.ended ? video.play() : video.pause());
-  const go = (c) => { location.href = c.url + '?autoplay=1#video'; };
+  // The SONG plays from a separate audio track (media/song.m4a, cut from this video) and the picture follows it.
+  // Phones pause <video> when the screen locks or the browser goes to the background, but keep <audio> playing,
+  // so the music carries on; when you come back the picture catches up. No song file: the video plays its own sound.
+  const song = new Audio(); song.preload = 'metadata'; song.src = 'media/song.m4a'; song.loop = loop;
+  let hasSong = true, internal = false, bg = null;              // bg: the chapter the song moved on to while hidden
+  const M = () => (hasSong ? song : video);                      // the clock and the sound
+  video.muted = true;
+  song.addEventListener('error', () => { if (bg) return; hasSong = false; video.muted = false; setPlay(); });
+  const dur = () => video.duration || (hasSong ? song.duration : 0) || 0;
+  const now = () => M().currentTime;
+  const setT = (t) => { t = Math.max(0, Math.min(dur() || t, t)); video.currentTime = t; if (hasSong) song.currentTime = t; paint(); };
+  function play() {
+    if (!hasSong) return video.play();
+    if (Math.abs(song.currentTime - video.currentTime) > 0.25) song.currentTime = video.currentTime;
+    const p = song.play(); video.play().catch(() => {});
+    return p;
+  }
+  function pause() { internal = true; song.pause(); video.pause(); internal = false; }
+  const toggle = () => (M().paused || M().ended ? play().catch(() => {}) : pause());
+  const go = (c, t) => { location.href = c.url + '?autoplay=1' + (t ? '&t=' + t.toFixed(1) : '') + '#video'; };
   $('play').addEventListener('click', toggle);
   big.addEventListener('click', toggle);
   video.addEventListener('click', toggle);
   video.addEventListener('dblclick', () => $('fs').click());
   $('next')?.addEventListener('click', () => go(target));
-  $('mute').addEventListener('click', () => { video.muted = !video.muted; });
-  vol.addEventListener('input', () => { video.volume = +vol.value; video.muted = +vol.value === 0; });
+  const snd = () => (hasSong ? song : video);
+  $('mute').addEventListener('click', () => { snd().muted = !snd().muted; showVol(); });
+  vol.addEventListener('input', () => { snd().volume = +vol.value; snd().muted = +vol.value === 0; showVol(); });
+  const showVol = () => { const a = snd(); $('mute').firstElementChild.outerHTML = svg(a.muted || a.volume === 0 ? I.mute : I.vol); vol.value = a.muted ? 0 : a.volume; };
   $('auto')?.addEventListener('click', (e) => { autoNext = !autoNext; store.set('autonext', autoNext); const b = e.currentTarget; b.setAttribute('aria-pressed', String(autoNext)); b.querySelector('.pl-tip').textContent = `Autoplay is ${autoNext ? 'on' : 'off'}`; if (!autoNext) hideUp(); });
-  $('loop').addEventListener('click', (e) => { loop = !loop; video.loop = loop; store.set('loop', loop); e.currentTarget.classList.toggle('on', loop); e.currentTarget.setAttribute('aria-pressed', String(loop)); if (loop) hideUp(); });
+  $('loop').addEventListener('click', (e) => { loop = !loop; video.loop = loop; song.loop = loop; store.set('loop', loop); const b = e.currentTarget; b.classList.toggle('on', loop); b.setAttribute('aria-pressed', String(loop)); b.querySelector('.pl-tip').textContent = loop ? 'Looping this song' : 'Loop this song'; if (loop) hideUp(); });
   $('fs').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else if (box.requestFullscreen) box.requestFullscreen(); else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); });
   document.addEventListener('fullscreenchange', () => { $('fs').firstElementChild.outerHTML = svg(document.fullscreenElement ? I.fsx : I.fs); });
-  const setPlay = () => { const p = !video.paused && !video.ended; box.classList.toggle('playing', p); $('play').firstElementChild.outerHTML = svg(p ? I.pause : I.play); $('play').setAttribute('aria-label', p ? 'Pause' : 'Play'); };
-  video.addEventListener('play', () => { setPlay(); hideUp(); poke(); });
-  video.addEventListener('pause', () => { setPlay(); box.classList.remove('idle'); });
-  video.addEventListener('volumechange', () => { $('mute').firstElementChild.outerHTML = svg(video.muted || video.volume === 0 ? I.mute : I.vol); vol.value = video.muted ? 0 : video.volume; });
+  const setPlay = () => { const p = !M().paused && !M().ended; box.classList.toggle('playing', p); $('play').firstElementChild.outerHTML = svg(p ? I.pause : I.play); $('play').setAttribute('aria-label', p ? 'Pause' : 'Play'); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = p ? 'playing' : 'paused'; };
+  for (const el of [song, video]) {
+    el.addEventListener('play', () => { if (el !== M()) return; setPlay(); hideUp(); poke(); session(); });
+    el.addEventListener('pause', () => { if (el !== M()) return; setPlay(); box.classList.remove('idle'); });
+  }
+  // something else paused the video while the page is visible (e.g. the narration player): pause the song too
+  video.addEventListener('pause', () => { if (hasSong && !internal && !document.hidden && !video.ended && !song.paused) pause(); });
   const paint = () => {
-    const d = video.duration || 0, k = d ? video.currentTime / d : 0;
-    fill.style.width = k * 100 + '%'; knob.style.left = k * 100 + '%'; time.textContent = `${mmss(video.currentTime)} / ${mmss(d)}`;
+    const d = dur(), t = now(), k = d ? t / d : 0;
+    fill.style.width = k * 100 + '%'; knob.style.left = k * 100 + '%'; time.textContent = `${mmss(t)} / ${mmss(d)}`;
     seek.setAttribute('aria-valuenow', String(Math.round(k * 100)));
-    const left = d - video.currentTime;                                            // the corner card, last 12 seconds
-    if (target && next && autoNext && !loop && d && left < 12 && left > 0.3 && !video.paused) showUp(false);
+    const left = d - t;                                                            // the corner card, last 12 seconds
+    if (target && next && autoNext && !loop && d && left < 12 && left > 0.3 && !M().paused) showUp(false);
+    if (hasSong && !document.hidden && !song.paused && !bg) {                      // keep the picture on the music
+      if (video.paused && !video.ended) { video.currentTime = song.currentTime; video.play().catch(() => {}); }
+      else if (Math.abs(video.currentTime - song.currentTime) > 0.3) video.currentTime = song.currentTime;
+    }
   };
-  video.addEventListener('timeupdate', paint); video.addEventListener('loadedmetadata', paint);
-  const seekTo = (e) => { const r = seek.getBoundingClientRect(); const k = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); if (video.duration) video.currentTime = k * video.duration; paint(); };
+  song.addEventListener('timeupdate', paint); video.addEventListener('timeupdate', () => { if (!hasSong) paint(); });
+  video.addEventListener('loadedmetadata', paint);
+  const seekTo = (e) => { const r = seek.getBoundingClientRect(); const k = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); if (dur()) setT(k * dur()); };
   seek.addEventListener('pointerdown', (e) => { seek.setPointerCapture(e.pointerId); seekTo(e); const mv = (ev) => seekTo(ev); seek.addEventListener('pointermove', mv); seek.addEventListener('pointerup', () => seek.removeEventListener('pointermove', mv), { once: true }); });
-  seek.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') video.currentTime += 5; if (e.key === 'ArrowLeft') video.currentTime -= 5; });
+  seek.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') setT(now() + 5); if (e.key === 'ArrowLeft') setT(now() - 5); });
   box.tabIndex = -1;
   box.addEventListener('keydown', (e) => {
     if (e.target.closest('input')) return;
     const k = e.key.toLowerCase();
     if (k === ' ' || k === 'k') { e.preventDefault(); toggle(); } else if (k === 'f') $('fs').click(); else if (k === 'm') $('mute').click();
-    else if (k === 'arrowright') video.currentTime += 5; else if (k === 'arrowleft') video.currentTime -= 5; else if (k === 'escape') cancelUp();
+    else if (k === 'arrowright') setT(now() + 5); else if (k === 'arrowleft') setT(now() - 5); else if (k === 'escape') cancelUp();
     poke();
+  });
+
+  // ---------------------------------------------------------------- lock screen / background
+  function session(ch = me) {
+    if (!('mediaSession' in navigator)) return;
+    const base = ch.url;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: ch.song || ch.title, artist: `How AI Works · Season ${ch.season}, Chapter ${ch.n}`, album: ch.title,
+      artwork: [{ src: base + 'media/poster.jpg', sizes: '1280x720', type: 'image/jpeg' }] });
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch { /* unsupported action */ } };
+    h('play', () => play().catch(() => {})); h('pause', pause);
+    h('seekto', (d) => setT(d.seekTime)); h('seekbackward', () => setT(now() - 10)); h('seekforward', () => setT(now() + 10));
+    h('previoustrack', () => setT(0));
+    const nx = chainNext();
+    h('nexttrack', nx ? () => (document.hidden ? switchTo(nx) : go(nx)) : null);
+  }
+  const chainNext = () => { const at = bg || me; const i = all.indexOf(at); return all.slice(i + 1).find((c) => c.status === 'live' && c.url) || null; };
+  function switchTo(ch) {                                     // hidden: carry the music on into the next chapter
+    bg = ch; song.src = ch.url + 'media/song.m4a'; song.currentTime = 0;
+    song.play().catch(() => {}); session(ch);
+  }
+  setInterval(() => { if ('mediaSession' in navigator && navigator.mediaSession.setPositionState && hasSong && song.duration) { try { navigator.mediaSession.setPositionState({ duration: song.duration, position: Math.min(song.currentTime, song.duration), playbackRate: 1 }); } catch { /* ignore */ } } }, 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (bg) { go(bg, song.currentTime); return; }             // the song moved on while you were away: follow it
+    if (hasSong && !song.paused) { video.currentTime = song.currentTime; video.play().catch(() => {}); }
   });
   // hide the bar while playing and the mouse is still
   let idleT = 0;
-  function poke() { box.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => { if (!video.paused && !ui.matches(':hover')) box.classList.add('idle'); }, 2600); }
+  function poke() { box.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => { if (!M().paused && !ui.matches(':hover')) box.classList.add('idle'); }, 2600); }
   box.addEventListener('pointermove', poke); box.addEventListener('pointerdown', poke);
 
   // ---------------------------------------------------------------- up next: corner card + countdown at the end
@@ -174,19 +227,24 @@
   function hideUp() { cancelUp(); up.classList.remove('on'); }
   up.querySelector('[data-c]')?.addEventListener('click', hideUp);
   up.querySelector('[data-g]')?.addEventListener('click', () => go(target));
-  video.addEventListener('ended', () => {
+  const onEnd = () => {
+    if (loop) return;
+    if (document.hidden && hasSong && autoNext) { const nx = chainNext(); if (nx) { switchTo(nx); return; } }
     setPlay(); box.classList.remove('idle');
-    if (!target || loop) return;
+    if (!target || bg) return;
     showUp(autoNext && !!next);                    // autoplay off (or end of the season): the card stays, no countdown
-  });
-  video.addEventListener('seeking', () => { if (video.duration && video.duration - video.currentTime > 12) hideUp(); });
+  };
+  song.addEventListener('ended', () => { if (hasSong) onEnd(); });
+  video.addEventListener('ended', () => { if (!hasSong) onEnd(); });
+  video.addEventListener('seeking', () => { if (dur() && dur() - video.currentTime > 12) hideUp(); });
 
   // ---------------------------------------------------------------- arriving with ?autoplay=1
   if (new URLSearchParams(location.search).has('autoplay')) {
+    const t = parseFloat(new URLSearchParams(location.search).get('t') || '0') || 0;
     history.replaceState(null, '', location.pathname + location.hash);
     box.scrollIntoView({ block: 'center' });
-    const start = () => video.play().catch(() => { /* the browser wants a tap first: the big play button is showing */ });
-    if (video.readyState >= 2) start(); else { video.addEventListener('loadeddata', start, { once: true }); video.preload = 'auto'; video.load(); }
+    const start = () => { if (t) setT(t); play().catch(() => { /* the browser wants a tap first: the big play button is showing */ }); };
+    if (video.readyState >= 1) start(); else { video.addEventListener('loadedmetadata', start, { once: true }); video.preload = 'auto'; video.load(); }
   }
   setPlay();
 })();
