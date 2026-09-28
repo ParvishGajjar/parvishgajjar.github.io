@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Make the Loop Real · How AI Works, Season 1 Chapter 4 · Parvish Gajjar</title>
+  <meta name="description" content="How AI Works, Season 1 Chapter 4: the complete training loop. Random numbers, shuffled batches, forward, loss, backward, step, 7,504 times, until a network reads handwriting it has never seen. Every number from one real run.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="Make the Loop Real — How AI Works, S1·C4">
+  <meta property="og:description" content="A learning series by Parvish Gajjar: a music video, a chapter you can read or listen to, and a real training run you can scrub through, step by step.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/s1/c4/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s1/c4/media/poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/s1/c4/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=3">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+  <style>
+    .scrub .plates { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+    .scrub .plates canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--border); display: block; }
+    .scrub input[type="range"] { width: 100%; accent-color: var(--amber); }
+    .bars { display: grid; grid-template-columns: 1.2rem 1fr 3.4rem; gap: 0.25rem 0.5rem; align-items: center; font: 500 0.78rem/1.2 "JetBrains Mono", monospace; margin-top: 0.6rem; }
+    .bars i { display: block; height: 0.55rem; border-radius: 3px; background: var(--muted-2); }
+    .bars i.seven { background: var(--amber); }
+    .bars span:last-child { text-align: right; color: var(--muted); }
+    .miss { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.5rem; margin-top: 1.5rem; }
+    .miss figure { margin: 0; }
+    .miss canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--border); display: block; }
+    .miss figcaption { font: 500 0.7rem/1.3 "JetBrains Mono", monospace; color: var(--muted); text-align: center; margin-top: 0.2rem; }
+    .miss figcaption b { color: #ff6b57; font-weight: 500; }
+    @media (max-width: 700px) { .miss { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .conf { border-collapse: collapse; font: 500 0.78rem/1 "JetBrains Mono", monospace; margin-top: 1.5rem; }
+    .conf td, .conf th { width: 2.4rem; height: 2.1rem; text-align: center; color: var(--muted); }
+    .conf th { color: var(--muted-2); font-weight: 500; }
+    .conf td.d { color: var(--ink); }
+    .conf-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+        <main class="lp">
+    <!-- ============================================================ hero -->
+    <section class="c-hero">
+      <p class="section-kicker"><span class="kicker-bar"></span><a href="/learn/">How AI Works</a> · Season 1 · Chapter 4</p>
+      <h1>Make the Loop <span class="serif-accent">Real</span></h1>
+      <p class="song-tag"><small>Music video</small>“Make the Loop Real”</p>
+      <p class="lede">Every piece is on the table: a forward pass, a loss, a backward pass, a step. Put them in a loop, feed it 60,000 handwritten digits in shuffled handfuls, and run it 7,504 times. This is the whole of training, watched from the first random guess to a network that reads handwriting it has never seen.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#video">Watch the video</a>
+        <a class="button button-secondary" href="#chapter">Listen to the chapter · 11 min</a>
+      </div>
+    </section>
+
+    <!-- ============================================================ video -->
+    <section id="video" style="border-top:0;padding-top:0">
+      <div class="player" id="player">
+        <video id="mv" src="media/s1c4.mp4" poster="media/poster.jpg" controls playsinline preload="metadata" aria-label="Music video: Make the Loop Real"></video>
+      </div>
+    </section>
+
+    <!-- ============================================================ the chapter (read or listen) -->
+    <section id="chapter">
+      <p class="section-kicker"><span class="kicker-bar"></span>The chapter</p>
+      <h2>Read it, or press play and <span class="serif-accent">listen</span>.</h2>
+
+      <div class="listen glass sticky" id="listen" data-state="loading">
+        <button class="listen-btn" id="listenBtn" type="button" aria-label="Play the chapter">
+          <svg id="icoPlay" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>
+          <svg id="icoPause" viewBox="0 0 16 16" aria-hidden="true" hidden><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+        </button>
+        <div class="listen-body">
+          <div class="listen-title"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="listenNow">Listen to this chapter</span><span id="listenTime">—</span></div>
+          <div class="listen-bar" id="listenBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="listenFill"></i></div>
+        </div>
+        <button class="listen-speed" id="listenSpeed" type="button" aria-label="Playback speed">1×</button>
+        <audio id="narration" preload="none" src="audio/chapter.mp3"></audio>
+      </div>
+
+      <article class="story lp-read" id="story">
+        <p>Three chapters, three pieces. Chapter 1 was the forward pass: pixels in, ten probabilities out. Chapter 2 was the loss and the step: measure how wrong, and move every dial a little downhill. Chapter 3 was the backward pass: how every dial finds its own slope. This chapter puts them in a loop and runs it until the network works.</p>
+        <p>Every number here comes from re-running Chapter 1's training exactly, and recording what happened at every step.</p>
+
+        <h2 id="start">It starts as a stranger</h2>
+        <p data-say="Before training, the network's 13,002 numbers are random. They're drawn from a bell curve whose width depends on how many inputs each neuron has. This is called He initialization, after Kaiming He, and it keeps the signals from shrinking to nothing or blowing up as they pass through the layers. Picture each first-layer neuron's 784 weights as a 28 by 28 image and you see static.">Before training, the network's 13,002 numbers are random. They're drawn from a bell curve whose width depends on how many inputs each neuron has. This is called <strong class="term">He initialization</strong>, after Kaiming He, and it keeps signals from shrinking to nothing or blowing up as they pass through the layers. Picture each first-layer neuron's 784 weights as a 28×28 image and you see static.</p>
+        <p data-say="Shown 10,000 test digits, this random network gets 8.7 percent right. Guessing blindly among ten would get 10 percent. It's a coin with ten sides.">Shown 10,000 test digits, this random network gets 8.7% right. Guessing blindly among ten would get 10%. It's a coin with ten sides.</p>
+        <span class="real" data-say="Step 0: 8.7 percent right on 10,000 test digits.">Step 0: 8.7% right on 10,000 test digits</span>
+
+        <h2 id="piles">Two piles that never mix</h2>
+        <p data-say="MNIST comes in two piles: 60,000 training digits and 10,000 test digits, written by different people. The network learns only from the first pile. The second is kept aside and used only to measure it. That separation is the most important habit in machine learning. A network can score perfectly on examples it has memorized; the only honest measure is examples it has never seen.">MNIST comes in two piles: 60,000 training digits and 10,000 test digits, written by different people. The network learns only from the first pile. The second is kept aside and used only to measure it. That separation is the most important habit in machine learning: a network can score perfectly on examples it has memorized, so the only honest measure is examples it has never seen.</p>
+
+        <h2 id="batches">A handful at a time, never the same order twice</h2>
+        <p data-say="Each step takes a batch of 64 training digits. 938 batches cover all 60,000 once. That's one epoch. Our run did 8 epochs, 7,504 steps. Before every epoch the whole pile is shuffled. The first epoch began with an 8, a 9, a 3, a 2; the second with a completely different order. Shuffling makes sure no batch is all ones or all sevens, and that the order of the digits never teaches the network something by accident.">Each step takes a <strong class="term">batch</strong> of 64 training digits. 938 batches cover all 60,000 once; that's one <strong class="term">epoch</strong>. Our run did 8 epochs, 7,504 steps. Before every epoch the whole pile is shuffled. The first epoch began with an 8, a 9, a 3, a 2; the second in a completely different order. Shuffling makes sure no batch is all 1s or all 7s, and that the order of the digits never teaches the network something by accident.</p>
+
+        <h2 id="loop">The loop</h2>
+        <p>Here is the whole of training, one step:</p>
+        <ul class="timeline" data-say="Take the next batch of 64 digits. Run them forward to get ten probabilities each. Measure the loss, minus log of the probability given to each right answer, averaged. Run the blame backward to get all 13,002 slopes. Move every dial a little against its slope. Then do it again.">
+          <li><b>1 · batch</b> take the next 64 digits</li>
+          <li><b>2 · forward</b> ten probabilities for each (Chapter 1)</li>
+          <li><b>3 · loss</b> −log p of the right answers, averaged (Chapter 2)</li>
+          <li><b>4 · backward</b> all 13,002 slopes (Chapter 3)</li>
+          <li><b>5 · step</b> every dial moves a little against its slope (Chapter 2)</li>
+          <li><b>6 · again</b></li>
+        </ul>
+        <p data-say="Our step was Adam with a learning rate of 0.002, the variant of gradient descent from Chapter 2 that smooths each dial's slope and scales its step. Nothing else is hidden. The script at the bottom of this page is this loop, line for line.">Our step was Adam with a learning rate of 0.002, the variant of gradient descent from Chapter 2 that smooths each dial's slope and scales its step. Nothing else is hidden. The script at the bottom of this page is this loop, line for line.</p>
+
+        <h2 id="watch">Watching it learn</h2>
+        <p data-say="The first steps change the most. After 16 steps, having seen about a thousand digits, the network is right 39.2 percent of the time. After 96 steps, 85.0 percent. It passes 90 percent at step 256, and ends the first epoch at 93.3 percent. The next seven epochs add less than two points: 95.2 percent at the end. Learning is fast, then slow. Almost every training curve you'll ever see has that shape.">The first steps change the most. After 16 steps, having seen about a thousand digits, the network is right 39.2% of the time. After 96 steps, 85.0%. It passes 90% at step 256 and ends the first epoch at 93.3%. The next seven epochs add less than two points: 95.2% at the end. Learning is fast, then slow; almost every training curve you'll ever see has that shape.</p>
+        <span class="real" data-say="Test accuracy: 8.7 percent at step 0, 39.2 at step 16, 85.0 at step 96, 93.3 after epoch 1, 95.2 after epoch 8.">Test accuracy · step 0: 8.7% · step 16: 39.2% · step 96: 85.0% · epoch 1: 93.3% · epoch 8: 95.2%</span>
+        <p data-say="Chapter 1's seven is a test digit, so the network never trained on it. From step 32 on, it reads it correctly every time, and just after the first epoch it's 99.6 percent sure.">Chapter 1's 7 is a test digit, so the network never trained on it. From step 32 on it reads it correctly every time, and just after the first epoch it's 99.6% sure.</p>
+        <p data-say="And the static changes. Watch the first-layer neurons' weight images during training and strokes appear: bright where ink should be, dark where it shouldn't. Nobody drew them. They are what 7,504 small steps against the slope left behind.">And the static changes. Watch the first-layer neurons' weight images during training and strokes appear: bright where ink should be, dark where it shouldn't. Nobody drew them. They are what 7,504 small steps against the slope left behind.</p>
+
+        <h2 id="unseen">Seen and unseen</h2>
+        <p data-say="After each epoch we measured the network on both piles. At the end it's right on 96.4 percent of the 60,000 digits it trained on, and 95.2 percent of the 10,000 it never saw. The gap is small. That means it learned the shapes of digits, not the particular pages it studied.">After each epoch we measured the network on both piles. At the end it's right on 96.4% of the 60,000 digits it trained on and 95.2% of the 10,000 it never saw. The gap is small, which means it learned the shapes of digits, not the particular pages it studied.</p>
+        <span class="real" data-say="After 8 epochs: 96.4 percent on training digits, 95.2 percent on test digits.">After 8 epochs · training digits 96.4% · test digits 95.2%</span>
+        <p data-say="When the gap grows, when training accuracy keeps rising but test accuracy stalls or falls, the network is memorizing. That's called overfitting. The standard defence is a third pile, a validation set, carved out of the training data. You check it after every epoch and keep the version of the network that did best there. The test set is then used once, at the very end, so it stays honest. The script for this chapter does exactly that.">When the gap grows, when training accuracy keeps rising but test accuracy stalls or falls, the network is memorizing. That's called <strong class="term">overfitting</strong>. The standard defence is a third pile, a <strong class="term">validation set</strong>, carved out of the training data. You check it after every epoch and keep the version of the network that did best there. The test set is then used once, at the very end, so it stays honest. The script for this chapter does exactly that.</p>
+
+        <h2 id="mistakes">What still fools it</h2>
+        <p data-say="95.2 percent right means 480 of the 10,000 test digits wrong. The most common mistake is a seven read as a two, 23 times, then a seven read as a nine and a two read as a three, 22 times each. Some mistakes are made with complete confidence: an eight it calls a six at 100 percent, a three it calls an eight at 100 percent. Look at those digits and many of them really do look like something else.">95.2% right means 480 of the 10,000 test digits wrong. The most common mistake is a 7 read as a 2, 23 times, then a 7 read as a 9 and a 2 read as a 3, 22 times each. Some mistakes are made with complete confidence: an 8 it calls a 6 at 100%, a 3 it calls an 8 at 100%. Look at those digits and many really do look like something else.</p>
+        <span class="real" data-say="480 wrong out of 10,000. Seven read as two: 23 times.">480 wrong of 10,000 · 7 read as 2: 23 times · 7 as 9 and 2 as 3: 22 each</span>
+        <p data-say="Our network is tiny: 16 neurons in each hidden layer. Bigger networks, and convolutional networks, which look at small patches of the image at a time, get past 99 percent on these digits. But the loop that trains them is this one.">Our network is tiny: 16 neurons in each hidden layer. Bigger networks, and <em>convolutional</em> networks, which look at small patches of the image at a time, get past 99% on these digits. But the loop that trains them is this one.</p>
+
+        <h2 id="today">Where this lives today</h2>
+        <p data-say="Pretraining a large language model is this loop. The batch is a few million tokens of text instead of 64 digits. The forward pass predicts each next token. The loss is the same minus log p. The backward pass is the same chain rule, done by the library. The step is AdamW, Adam with weight decay. It runs for hundreds of thousands of steps on thousands of chips, usually seeing most of its data only about once, and a held-out set is watched the whole way, just as we watched our test digits.">Pretraining a large language model is this loop. The batch is a few million tokens of text instead of 64 digits. The forward pass predicts each next token; the loss is the same −log <em>p</em>; the backward pass is the same chain rule, done by the library; the step is AdamW, Adam with weight decay. It runs for hundreds of thousands of steps on thousands of chips, usually seeing most of its data only about once, and a held-out set is watched the whole way, just as we watched our test digits.</p>
+        <p data-say="Real runs add a few more habits: a learning rate that warms up and then decays, saved checkpoints so a crash doesn't lose weeks of work, and careful mixing of data sources. But the heart of it is six lines: batch, forward, loss, backward, step, again.">Real runs add a few more habits: a learning rate that warms up and then decays, saved checkpoints so a crash doesn't lose weeks of work, and careful mixing of data sources. But the heart of it is six lines: batch, forward, loss, backward, step, again.</p>
+
+        <h2 id="season">Season 1, complete</h2>
+        <p data-say="That's the whole of Season 1. A neuron multiplies, adds, and keeps what's above zero. The loss says how wrong. The gradient says which way is downhill, and backpropagation finds it for every dial at once. The loop does it again and again, until 13,002 random numbers read handwriting. Season 2 takes the same loop to language: how text becomes numbers, and how a transformer learns to predict the next word.">That's the whole of Season 1. A neuron multiplies, adds, and keeps what's above zero. The loss says how wrong. The gradient says which way is downhill, and backpropagation finds it for every dial at once. The loop does it again and again, until 13,002 random numbers read handwriting. Season 2 takes the same loop to language: how text becomes numbers, and how a transformer learns to predict the next word.</p>
+        <p>Not one moment. Every single step.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ try it -->
+    <section id="try">
+      <p class="section-kicker"><span class="kicker-bar"></span>Try it · scrub through the real training run</p>
+      <h2>Drag it from <span class="serif-accent">noise</span> to knowing.</h2>
+      <p class="lede">This is the recorded run from the video. Drag the slider through its 7,504 steps, or press play, and watch the 16 first-layer neurons' weights, the accuracy on 10,000 unseen digits, and Chapter 1's 7 change together.</p>
+      <div class="land-grid scrub">
+        <div class="panel glass">
+          <h4>16 first-layer neurons · 784 weights each</h4>
+          <p class="sub">White is a positive weight, brown a negative one.</p>
+          <div class="plates" id="plates"></div>
+        </div>
+        <div class="panel glass">
+          <h4>Training step</h4>
+          <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="Training step">
+          <div class="eta-row"><span>0</span><b id="stepVal">0</b><span>7,504</span></div>
+          <div class="row" style="display:flex;gap:0.5rem;margin-top:0.8rem"><button class="button button-primary" id="play" type="button">Play</button><button class="button button-secondary" id="toEnd" type="button">Jump to the end</button></div>
+          <dl class="readout">
+            <dt>epoch</dt><dd id="rEp">—</dd>
+            <dt>right on unseen digits</dt><dd id="rTe" class="hot">—</dd>
+            <dt>right on training digits</dt><dd id="rTr">—</dd>
+            <dt>test loss</dt><dd id="rLo">—</dd>
+          </dl>
+          <svg class="spark" id="spark" viewBox="0 0 300 80" role="img" aria-label="Test accuracy over training"></svg>
+          <h4 style="margin-top:1rem">Chapter 1's 7, at this step</h4>
+          <div class="bars" id="bars"></div>
+        </div>
+      </div>
+      <h3 style="margin-top:2.6rem">The 32 mistakes it's most sure about</h3>
+      <p class="muted">Real test digits after training. The label, then what the network said and how sure it was.</p>
+      <div class="miss" id="miss"></div>
+      <h3 style="margin-top:2.6rem">Every test digit, sorted</h3>
+      <p class="muted">Rows: the true digit. Columns: what the network said. The diagonal is right; everything else is one of the 480 mistakes.</p>
+      <div class="conf-wrap"><table class="conf" id="conf" aria-label="Confusion matrix"></table></div>
+    </section>
+
+    <!-- ============================================================ build it -->
+    <section id="build">
+      <div class="two">
+        <div>
+          <p class="section-kicker"><span class="kicker-bar"></span>Build it yourself</p>
+          <h2>The whole loop, one file.</h2>
+          <p class="lede">Everything from Season 1 in one NumPy script: He initialization, a validation set carved from the training data, a fresh shuffle every epoch, forward, backward written out, Adam, keep-the-best on validation, and the test set used exactly once at the end. Put it next to <code>train_net.py</code> from Chapter 1.</p>
+          <div class="row" style="margin-top:1.4rem;display:flex;gap:0.6rem;flex-wrap:wrap"><a class="button button-primary" href="lab/train_loop.py" download>Download train_loop.py</a><a class="button button-secondary" href="/learn/s1/c1/lab/train_net.py" download>train_net.py</a></div>
+        </div>
+        <div>
+<pre id="expected"><span class="c"># Python 3.10+</span>
+pip install numpy
+python train_loop.py
+
+<span class="c"># expected (a minute or two on a laptop CPU)</span>
+step     0  untrained: train 7.9%  validation 7.7%
+step   860  epoch  1: train 92.4%  validation 91.5%  gap +0.9%  <- best so far
+step  1720  epoch  2: train 94.0%  validation 93.5%  gap +0.6%  <- best so far
+…
+step  8600  epoch 10: train 96.7%  validation 95.1%  gap +1.6%  <- best so far
+
+test accuracy (10,000 digits never used for anything until now): 95.0%   wrong: 496</pre>
+          <p class="muted" style="font-size:0.95rem;margin-top:1rem">Try this: change the hidden layers from 16 to 64 neurons (and the 16s in the shapes). Compare validation accuracy with the 16-neuron run, and watch the train/validation gap for signs of memorizing.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ credits -->
+    <section id="credits">
+      <p class="section-kicker"><span class="kicker-bar"></span>Credits</p>
+      <h2>Standing on their <span class="serif-accent">shoulders</span>.</h2>
+      <p class="lede">The ideas here belong to the researchers and teachers below. What this series adds is the delivery: the song, the visuals, the writing, and a real model you can inspect. If this helped, go and watch and read theirs.</p>
+      <div class="credits">
+        <div class="glass">
+          <h3>Teaching this builds on</h3>
+          <ul>
+            <li><b>Andrej Karpathy</b><span>“A Recipe for Training Neural Networks”: the habits of a training loop.</span><a href="https://karpathy.github.io/2019/04/25/recipe/" target="_blank" rel="noreferrer">karpathy.github.io</a></li>
+            <li><b>Andrej Karpathy</b><span>“Neural Networks: Zero to Hero” lecture series.</span><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noreferrer">karpathy.ai</a></li>
+            <li><b>Grant Sanderson · 3Blue1Brown</b><span>“But what is a neural network?” through “Backpropagation calculus” (Deep learning, chapters 1–4).</span><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noreferrer">3blue1brown.com</a></li>
+            <li><b>Michael Nielsen</b><span><em>Neural Networks and Deep Learning</em>, chapters 1 and 3: training on MNIST, overfitting, validation data.</span><a href="http://neuralnetworksanddeeplearning.com/" target="_blank" rel="noreferrer">neuralnetworksanddeeplearning.com</a></li>
+            <li><b>Goodfellow, Bengio &amp; Courville</b><span><em>Deep Learning</em> (2016), chapters 5, 7 and 8.</span><a href="https://www.deeplearningbook.org/" target="_blank" rel="noreferrer">deeplearningbook.org</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Research</h3>
+          <ul>
+            <li><b>LeCun, Bottou, Bengio &amp; Haffner (1998)</b><span>Gradient-based learning applied to document recognition: MNIST and convolutional networks.</span><a href="https://doi.org/10.1109/5.726791" target="_blank" rel="noreferrer">doi:10.1109/5.726791</a></li>
+            <li><b>He, Zhang, Ren &amp; Sun (2015)</b><span>Delving deep into rectifiers: the initialization we used.</span><a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noreferrer">arXiv:1502.01852</a></li>
+            <li><b>Kingma &amp; Ba (2014)</b><span>Adam: a method for stochastic optimization.</span><a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noreferrer">arXiv:1412.6980</a></li>
+            <li><b>Loshchilov &amp; Hutter (2017)</b><span>Decoupled weight decay regularization: AdamW.</span><a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noreferrer">arXiv:1711.05101</a></li>
+            <li><b>Prechelt (1998)</b><span>Early stopping, but when? Keeping the best model on validation data.</span><a href="https://doi.org/10.1007/3-540-49430-8_3" target="_blank" rel="noreferrer">doi:10.1007/3-540-49430-8_3</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Production</h3>
+          <ul>
+            <li><b>mexicat · pdoom-video</b><span>The MIT-licensed music-video engine this series is built on. Its song and lyrics are not used.</span><a href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">github.com/mexicat/pdoom-video</a></li>
+            <li><b>ACE-Step 1.5</b><span>Open-source music model (Apache-2.0) that sang our lyrics.</span><a href="https://github.com/ace-step/ACE-Step-1.5" target="_blank" rel="noreferrer">github.com/ace-step/ACE-Step-1.5</a></li>
+            <li><b>Kokoro-82M</b><span>Open-weight text-to-speech model (Apache-2.0) that narrates the chapter.</span><a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noreferrer">github.com/hexgrad/kokoro</a></li>
+            <li><b>Demucs · MMS forced alignment · Whisper</b><span>Used to separate the vocals, time every word, and check the lyrics are sung.</span></li>
+            <li><b>Parvish Gajjar, with Claude</b><span>Lyrics, visuals, writing, and the training-run recording.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ next -->
+    <section>
+      <div class="next glass" id="next">
+        <div>
+          <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 2 · Chapter 1</p>
+          <h3>Pieces of a Sentence: tokens and embeddings, how text becomes numbers.</h3>
+        </div>
+        <a class="button button-secondary" href="/learn/">All chapters</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · Season 1 · Chapter 4</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=5"></script>
+  <script src="/learn/player.js?v=2" defer></script>
+  <script src="chapter.js?v=1" defer></script>
+</body>
+</html>

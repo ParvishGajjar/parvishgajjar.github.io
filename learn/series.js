@@ -13,14 +13,15 @@ window.SERIES = {
           thumb: '/learn/s1/c2/media/poster-sm.jpg', blurb: 'Loss, gradients and gradient descent: measure how wrong, find the slope, take a small step down.' },
         { n: 3, id: 's1c3', title: 'Every Link Matters', song: 'Every Link Matters', status: 'live', url: '/learn/s1/c3/',
           thumb: '/learn/s1/c3/media/poster-sm.jpg', blurb: 'The chain rule and backpropagation: how all 13,002 slopes are found at once.' },
-        { n: 4, id: 's1c4', title: 'Make the Loop Real', status: 'next', blurb: 'A complete training loop, from random numbers to 95% on handwritten digits.' },
+        { n: 4, id: 's1c4', title: 'Make the Loop Real', song: 'Make the Loop Real', status: 'live', url: '/learn/s1/c4/',
+          thumb: '/learn/s1/c4/media/poster-sm.jpg', blurb: 'A complete training loop, from random numbers to 95% on handwritten digits.' },
       ],
     },
     {
       n: 2, title: 'Transformers: Build a GPT',
       blurb: 'The 2017 invention behind ChatGPT, built up piece by piece.',
       chapters: [
-        { n: 1, id: 's2c1', title: 'Pieces of a Sentence', status: 'planned', blurb: 'Tokens and embeddings: how text becomes numbers.' },
+        { n: 1, id: 's2c1', title: 'Pieces of a Sentence', status: 'next', blurb: 'Tokens and embeddings: how text becomes numbers.' },
         { n: 2, id: 's2c2', title: 'Attention', status: 'planned', blurb: 'How every word looks at every other word; the idea that changed everything.' },
         { n: 3, id: 's2c3', title: 'One More Token', status: 'planned', blurb: 'Pretraining a tiny GPT on next-word prediction.' },
         { n: 4, id: 's2c4', title: 'Does It Really Know?', status: 'planned', blurb: 'Evaluation, generalisation and why models make things up.' },
