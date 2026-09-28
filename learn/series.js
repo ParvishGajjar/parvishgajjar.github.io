@@ -11,8 +11,9 @@ window.SERIES = {
           thumb: '/learn/s1/c1/media/f3-weights-sm.jpg', blurb: 'Pixels become numbers; a neuron multiplies, adds and keeps what’s above zero.' },
         { n: 2, id: 's1c2', title: 'Follow the Slope', song: 'Follow the Slope', status: 'live', url: '/learn/s1/c2/',
           thumb: '/learn/s1/c2/media/poster-sm.jpg', blurb: 'Loss, gradients and gradient descent: measure how wrong, find the slope, take a small step down.' },
-        { n: 3, id: 's1c3', title: 'Every Link Matters', status: 'next', blurb: 'The chain rule and backpropagation: how all 13,002 slopes are found at once.' },
-        { n: 4, id: 's1c4', title: 'Make the Loop Real', status: 'planned', blurb: 'A complete training loop, from random numbers to 95% on handwritten digits.' },
+        { n: 3, id: 's1c3', title: 'Every Link Matters', song: 'Every Link Matters', status: 'live', url: '/learn/s1/c3/',
+          thumb: '/learn/s1/c3/media/poster-sm.jpg', blurb: 'The chain rule and backpropagation: how all 13,002 slopes are found at once.' },
+        { n: 4, id: 's1c4', title: 'Make the Loop Real', status: 'next', blurb: 'A complete training loop, from random numbers to 95% on handwritten digits.' },
       ],
     },
     {

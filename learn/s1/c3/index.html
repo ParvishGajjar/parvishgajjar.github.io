@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Every Link Matters · How AI Works, Season 1 Chapter 3 · Parvish Gajjar</title>
+  <meta name="description" content="How AI Works, Season 1 Chapter 3: backpropagation. Start at the error, walk the blame back along the chain, and every one of 13,002 slopes comes out of one backward pass. Shown on a real network, checked against nudging.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="Every Link Matters — How AI Works, S1·C3">
+  <meta property="og:description" content="A learning series by Parvish Gajjar: a music video, a chapter you can read or listen to, and a real network whose blame you can walk back yourself.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/s1/c3/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s1/c3/media/poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/s1/c3/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=3">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+  <style>
+    .bp { cursor: pointer; }
+    .bp canvas { width: 100%; display: block; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: #0a0d10; }
+    .bp-digit { max-width: 17rem; }
+    .bp-row { display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+    @media (max-width: 700px) { .bp-row { grid-template-columns: minmax(0, 1fr); } .bp-digit { max-width: none; } }
+    .bp-maps { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.4rem; margin-top: 1rem; }
+    .bp-maps figure { margin: 0; cursor: pointer; }
+    .bp-maps canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--border); display: block; }
+    .bp-maps figure.on canvas { border-color: #e8412f; box-shadow: 0 0 0 1px #e8412f; }
+    .bp-maps figcaption { font: 500 0.66rem/1.3 "JetBrains Mono", monospace; color: var(--muted-2); text-align: center; margin-top: 0.2rem; }
+    .bp-maps figure.dead figcaption { opacity: 0.55; }
+    .bp .readout dd.red { color: #ff6b57; }
+    .bp .readout dd.ok { color: var(--cyan); }
+    .bars { display: grid; grid-template-columns: 1.2rem 1fr 3.4rem; gap: 0.25rem 0.5rem; align-items: center; font: 500 0.78rem/1.2 "JetBrains Mono", monospace; margin-top: 0.8rem; }
+    .bars i { display: block; height: 0.55rem; border-radius: 3px; background: var(--muted-2); transition: width .25s; }
+    .bars i.seven { background: var(--amber); }
+    .bars span:last-child { text-align: right; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+    <main class="lp">
+    <!-- ============================================================ hero -->
+    <section class="c-hero">
+      <p class="section-kicker"><span class="kicker-bar"></span><a href="/learn/">How AI Works</a> · Season 1 · Chapter 3</p>
+      <h1>Every Link <span class="serif-accent">Matters</span></h1>
+      <p class="song-tag"><small>Music video</small>“Every Link Matters”</p>
+      <p class="lede">How a network finds all 13,002 of its slopes at once. Start at the error, walk the blame back along the chain, and every dial learns its share. The song tells it as a story about going back to where something broke; the video shows the maths.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#video">Watch the video</a>
+        <a class="button button-secondary" href="#chapter">Listen to the chapter · 10 min</a>
+      </div>
+    </section>
+
+    <!-- ============================================================ video -->
+    <section id="video" style="border-top:0;padding-top:0">
+      <div class="player" id="player">
+        <video id="mv" src="media/s1c3.mp4" poster="media/poster.jpg" controls playsinline preload="metadata" aria-label="Music video: Every Link Matters"></video>
+      </div>
+    </section>
+
+    <!-- ============================================================ the chapter (read or listen) -->
+    <section id="chapter">
+      <p class="section-kicker"><span class="kicker-bar"></span>The chapter</p>
+      <h2>Read it, or press play and <span class="serif-accent">listen</span>.</h2>
+
+      <div class="listen glass sticky" id="listen" data-state="loading">
+        <button class="listen-btn" id="listenBtn" type="button" aria-label="Play the chapter">
+          <svg id="icoPlay" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>
+          <svg id="icoPause" viewBox="0 0 16 16" aria-hidden="true" hidden><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+        </button>
+        <div class="listen-body">
+          <div class="listen-title"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="listenNow">Listen to this chapter</span><span id="listenTime">—</span></div>
+          <div class="listen-bar" id="listenBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="listenFill"></i></div>
+        </div>
+        <button class="listen-speed" id="listenSpeed" type="button" aria-label="Playback speed">1×</button>
+        <audio id="narration" preload="none" src="audio/chapter.mp3"></audio>
+      </div>
+
+      <article class="story lp-read" id="story">
+        <p data-say="Chapter 2 ended on a promise. To take one step downhill, training needs the slope of every one of the network's 13,002 dials. The obvious way to find a slope is to nudge the dial and re-run the network, which means 13,003 runs for every single step. Real training gets all 13,002 slopes, exactly, for about the price of one more run. The idea is called backpropagation, and it's how every neural network you've heard of is trained.">Chapter 2 ended on a promise. To take one step downhill, training needs the slope of every one of the network's 13,002 dials. The obvious way to find a slope is to nudge the dial and re-run the network: 13,003 runs for every single step. Real training gets all 13,002 slopes, exactly, for about the price of one more run. The idea is called <strong class="term">backpropagation</strong>, and it's how every neural network you've heard of is trained.</p>
+        <p>It has one move, used over and over: start at the error and walk backwards, passing the blame from each layer to the one before it.</p>
+
+        <h2 id="error">Start where it went wrong</h2>
+        <p data-say="We start with the same untrained network and the same seven as Chapter 2. It answered four, giving the four 18.8 percent and the seven 16.6 percent, for a loss of 1.80. The first question backpropagation asks is: how should each of the ten output scores change to lower that loss?">We start with the same untrained network and the same 7 as Chapter 2. It answered <em>four</em>, giving the 4 18.8% and the 7 16.6%, for a loss of 1.80. The first question backpropagation asks: how should each of the ten output scores change to lower that loss?</p>
+        <p data-say="For softmax followed by cross-entropy loss, the answer is beautifully simple. The slope of the loss with respect to each output score is p minus y: what the network guessed, minus what was true. Here y is one for the correct digit and zero for the rest. We'll call this the blame, and write it with the Greek letter delta.">For softmax followed by cross-entropy loss, the answer is beautifully simple. The slope of the loss with respect to each output score is <em>p</em> − <em>y</em>: what the network guessed, minus what was true, where <em>y</em> is 1 for the correct digit and 0 for the rest. We'll call it the <strong class="term">blame</strong>, written δ (delta).</p>
+        <span class="eq" data-say="delta equals p minus y.">δ = p − y</span>
+        <p data-say="For our seven the blame is minus 0.834 at the seven, and small positive numbers everywhere else, the largest being plus 0.188 at the four. A negative slope means raising that score lowers the loss. So the blame says: push the seven's score up, push every other score down, and the four's the most.">For our 7 the blame is −0.834 at the 7 and small positive numbers everywhere else, the largest being +0.188 at the 4. A negative slope means raising that score lowers the loss. So the blame says: push the 7's score up, push every other score down, the 4's most of all.</p>
+        <span class="real" data-say="Blame at the outputs: minus 0.834 at the seven, plus 0.188 at the four.">Blame at the outputs: −0.834 at the 7 · +0.188 at the 4</span>
+
+        <h2 id="chain">A chain of links</h2>
+        <p data-say="Now take one dial deep inside the network: the weight connecting pixel 462, a bright pixel in the middle of the seven, to neuron 5 of the first layer. Its effect on the loss has to travel. The pixel feeds neuron 5, neuron 5 feeds the second layer, the second layer feeds the ten outputs, and the outputs feed the loss. Every link in that chain has a slope of its own.">Now take one dial deep inside the network: the weight connecting pixel 462, a bright pixel in the middle of the 7, to neuron 5 of the first layer. Its effect on the loss has to travel. The pixel feeds neuron 5, neuron 5 feeds the second layer, the second layer feeds the ten outputs, and the outputs feed the loss. Every link in that chain has a slope of its own.</p>
+        <p data-say="The chain rule from calculus says what to do with them: the slope of the whole chain is the product of the slopes of its links. If turning a knob by one moves a gear by three, and moving that gear by one moves a hand by two, then the knob moves the hand by six.">The <strong class="term">chain rule</strong> from calculus says what to do with them: the slope of the whole chain is the product of the slopes of its links. If turning a knob by 1 moves a gear by 3, and moving that gear by 1 moves a hand by 2, the knob moves the hand by 6.</p>
+        <p data-say="Follow one path. At the seven's output the blame is minus 0.834. The weight from neuron 1 of the second layer into the seven is 0.433. The weight from our neuron 5 into that neuron 1 is 0.531, and both neurons fired, so their gates let the signal through. The pixel itself is 1.00. Multiply along the path: minus 0.834 times 0.433 times 0.531 times 1.00 is minus 0.192.">Follow one path. At the 7's output the blame is −0.834. The weight from neuron 1 of the second layer into the 7 is 0.433. The weight from our neuron 5 into that neuron 1 is 0.531, and both neurons fired, so their gates let the signal through. The pixel itself is 1.00. Multiply along the path: −0.834 × 0.433 × 0.531 × 1.00 = −0.192.</p>
+        <p data-say="But that's only one road from the dial to the loss. Neuron 5 reaches all ten outputs through the ten second-layer neurons that fired, so there are 100 paths. The multivariable chain rule says: multiply along each path, then add over all the paths. The total is minus 0.624. And when we nudge that dial directly and re-run the network, the slope comes out as minus 0.624103, the same to six decimals.">But that's only one road from the dial to the loss. Neuron 5 reaches all ten outputs through the ten second-layer neurons that fired, so there are 100 paths. The multivariable chain rule says: multiply along each path, then add over all the paths. The total is −0.624. When we nudge that dial directly and re-run the network, the slope comes out as −0.624103: the same, to six decimals.</p>
+        <span class="real" data-say="One dial, 100 paths. Chain rule: minus 0.624. Nudging: minus 0.624103.">W1[5, 462] · 100 paths · chain rule −0.624 · nudging −0.624103</span>
+
+        <h2 id="backwards">Why backwards</h2>
+        <p data-say="Tracing a hundred paths for every one of 13,002 dials would be hopeless. Here's the trick that makes it cheap. Every path from every first-layer dial passes through the same few neurons. So instead of following paths, compute the blame at each neuron once, starting from the loss and moving backwards, and let every dial reuse it.">Tracing a hundred paths for every one of 13,002 dials would be hopeless. Here's the trick that makes it cheap: every path from every first-layer dial passes through the same few neurons. So instead of following paths, compute the blame at each neuron <em>once</em>, starting from the loss and moving backwards, and let every dial reuse it.</p>
+        <p data-say="The blame arriving at a neuron is the sum of the blame of every neuron it feeds, each multiplied by the weight of the link between them. That's the same weights as the forward pass, used in reverse. Then it passes through the neuron's gate. Layer by layer, the blame flows from the loss back to the first layer. That backward flow is backpropagation.">The blame arriving at a neuron is the sum of the blame of every neuron it feeds, each multiplied by the weight of the link between them: the same weights as the forward pass, used in reverse. Then it passes through the neuron's gate. Layer by layer, the blame flows from the loss back to the first layer. That backward flow is backpropagation.</p>
+        <span class="eq" data-say="blame at a layer equals the weights, transposed, times the blame of the next layer, gated by where the neurons fired.">δ<sub>layer</sub> = (Wᵀ δ<sub>next</sub>) ⊙ [z &gt; 0]</span>
+        <p>It's the same sum over paths as before, just organised so that no multiplication is ever done twice. Computer scientists will recognise the pattern: it's dynamic programming.</p>
+
+        <h2 id="gates">Silent neurons, black pixels</h2>
+        <p data-say="Two things stop blame in its tracks. The first is the ReLU gate from Chapter 1. A neuron whose total came out negative outputs zero, and its slope there is zero too, so whatever blame arrives at it goes no further. For our seven, only 7 of the 16 first-layer neurons fired, and 10 of the 16 in the second layer. The silent ones pass nothing back.">Two things stop blame in its tracks. The first is the ReLU gate from Chapter 1. A neuron whose total came out negative outputs 0, and its slope there is 0 too, so whatever blame arrives at it goes no further. For our 7, only 7 of the 16 first-layer neurons fired, and 10 of the 16 in the second layer. The silent ones pass nothing back.</p>
+        <p data-say="The second is the input itself. Once the blame reaches a neuron, the slope of each dial feeding it is simply the blame times whatever came in on that dial's link.">The second is the input itself. Once the blame reaches a neuron, the slope of each dial feeding it is simply the blame times whatever came in on that dial's link:</p>
+        <span class="eq" data-say="the slope of a weight equals delta times x.">∂L/∂w = δ · x</span>
+        <p data-say="A black pixel sends in zero, so its dials get a slope of zero and won't move for this digit. Only 137 of the seven's 784 pixels have any ink. Put the gates and the black pixels together and, from this one seven, 1,156 of the 13,002 dials get a slope. The rest will hear from other digits. That's one reason training shows the network many examples at a time.">A black pixel sends in 0, so its dials get a slope of 0 and won't move for this digit. Only 137 of the 7's 784 pixels have any ink. Put the gates and the black pixels together and, from this one 7, 1,156 of the 13,002 dials get a slope. The rest will hear from other digits, which is one reason training shows the network many examples at a time.</p>
+        <span class="real" data-say="From one seven: 7 of 16 and 10 of 16 neurons fired, 137 ink pixels, 1,156 of 13,002 dials with a slope.">From one 7: 7/16 and 10/16 neurons fired · 137 ink pixels · 1,156 of 13,002 dials get a slope</span>
+
+        <h2 id="price">The price of a slope</h2>
+        <p data-say="Count the work. One forward pass through our network takes 12,960 multiplications. One backward pass, blame plus every slope, takes 13,376. Together, 26,336, and that buys all 13,002 slopes. Nudging each dial instead would take 13,003 forward passes, one to start and one per dial: 168,518,880 multiplications. Backpropagation is 6,399 times less work, and gives the same numbers.">Count the work. One forward pass through our network takes 12,960 multiplications. One backward pass, blame plus every slope, takes 13,376. Together that's 26,336, and it buys all 13,002 slopes. Nudging each dial instead would take 13,003 forward passes, one to start and one per dial: 168,518,880 multiplications. Backpropagation is 6,399× less work, and gives the same numbers.</p>
+        <span class="real" data-say="Forward 12,960. Backward 13,376. Nudging every dial 168,518,880. Backpropagation is 6,399 times cheaper.">Forward 12,960 · backward 13,376 · nudging every dial 168,518,880 · 6,399× cheaper</span>
+        <p data-say="The gap grows with the network. Nudging costs a full run per dial, so its price grows with the square of the network's size. Backpropagation stays a small, fixed multiple of one run. For a model with billions of dials, it's the difference between impossible and routine.">The gap grows with the network. Nudging costs a full run per dial, so its price grows with the <em>square</em> of the network's size, while backpropagation stays a small, fixed multiple of one run. For a model with billions of dials, it's the difference between impossible and routine.</p>
+
+        <h2 id="loop">One step, then the loop</h2>
+        <p data-say="With every slope in hand, Chapter 2's step does the rest: move every dial a little against its slope. Take one step of size 0.1 using this one seven's slopes, and the untrained network's loss on it falls from 1.80 to 0.073. It now gives the seven 93.0 percent. That's one digit, one step. A network that learned only this would just memorise it.">With every slope in hand, Chapter 2's step does the rest: move every dial a little against its slope. Take one step of size 0.1 using this one 7's slopes, and the untrained network's loss on it falls from 1.80 to 0.073; it now gives the 7 93.0%. That's one digit and one step, and a network that learned only this would simply memorise it.</p>
+        <p data-say="Real training runs the full loop: forward on a batch of 64 digits, loss, backward, step, and round again. Our network went round 7,504 times. At the end, the same seven gets a loss of 0.005, and its blame is 43 times smaller than at the start. There's almost nothing left to fix.">Real training runs the full loop: forward on a batch of 64 digits, loss, backward, step, and round again. Our network went round 7,504 times. At the end the same 7 has a loss of 0.005 and its blame is 43× smaller than at the start. There's almost nothing left to fix.</p>
+        <span class="real" data-say="One step on this seven: loss 1.80 to 0.073. Trained: 0.005, blame 43 times smaller.">One step on this 7: loss 1.80 → 0.073 · trained: 0.005, blame 43× smaller</span>
+
+        <h2 id="today">Where this lives today</h2>
+        <p data-say="Nobody writes backward passes by hand any more. Libraries like PyTorch and JAX record every operation in the forward pass, then walk them in reverse, applying the chain rule to each one. This is called reverse-mode automatic differentiation, and it's backpropagation for any program, not just neural networks. When you call loss dot backward in PyTorch, this chapter is what runs.">Nobody writes backward passes by hand any more. Libraries like PyTorch and JAX record every operation in the forward pass, then walk them in reverse, applying the chain rule to each one. This is called <strong class="term">reverse-mode automatic differentiation</strong>, and it's backpropagation for any program, not just neural networks. When you call <code>loss.backward()</code> in PyTorch, this chapter is what runs.</p>
+        <p data-say="In a large language model, the backward pass costs roughly twice the forward pass, because at every layer it computes two things: the blame for the layer below and the slopes of that layer's own dials. That's where the well-known rule of thumb comes from: training costs about six operations per parameter per token, two forward and four backward.">In a large language model the backward pass costs roughly twice the forward pass, because at every layer it computes two things: the blame for the layer below, and the slopes of that layer's own dials. That's where a well-known rule of thumb comes from: training costs about 6 operations per parameter per token, 2 forward and 4 backward.</p>
+        <p data-say="The idea was found more than once. Seppo Linnainmaa described reverse-mode differentiation in his 1970 master's thesis. Paul Werbos proposed using it to train neural networks in 1974. And in 1986 David Rumelhart, Geoffrey Hinton and Ronald Williams showed it could teach networks useful internal features, the paper that made backpropagation famous.">The idea was found more than once. Seppo Linnainmaa described reverse-mode differentiation in his 1970 master's thesis. Paul Werbos proposed using it to train neural networks in 1974. And in 1986 David Rumelhart, Geoffrey Hinton and Ronald Williams showed it could teach networks useful internal features, the paper that made backpropagation famous.</p>
+        <p data-say="We now have every piece: a forward pass, a loss, a backward pass, and a step. Chapter 4 puts them together into a complete training loop and runs it from random numbers to a working network.">We now have every piece: a forward pass, a loss, a backward pass, and a step. Chapter 4 puts them together into a complete training loop and runs it, from random numbers to a working network.</p>
+        <p>Start at the error. Walk the blame back. Every link gets its share.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ try it -->
+    <section id="try">
+      <p class="section-kicker"><span class="kicker-bar"></span>Try it · walk the blame back</p>
+      <h2>Pick a dial. Find its <span class="serif-accent">slope</span>.</h2>
+      <p class="lede">This is the untrained network from the video, shown our 7, running in your browser. Click a pixel of the 7 and one of the 16 first-layer neurons: that picks one dial. Its slope is computed two ways, by backpropagation and by nudging the dial and re-running the whole network. Then take one step and watch the answer change.</p>
+      <div class="land-grid bp">
+        <div class="panel glass">
+          <div class="bp-row">
+            <div class="bp-digit"><canvas id="digit" width="280" height="280" aria-label="The 7: click a pixel"></canvas><p class="sub" style="margin:0.4rem 0 0">Click a pixel · <span id="pixLabel">pixel 462</span></p></div>
+            <div><canvas id="net" width="620" height="420" aria-label="Network diagram: click a first-layer neuron"></canvas><p class="sub" style="margin:0.4rem 0 0">Click a first-layer neuron. Red is blame; hollow neurons stayed silent.</p></div>
+          </div>
+          <h4 style="margin-top:1.2rem">Each first-layer neuron's 784 slopes = its blame × the 7</h4>
+          <div class="bp-maps" id="maps"></div>
+        </div>
+        <div class="panel glass">
+          <h4>The dial</h4>
+          <p class="sub" id="dialName">W1[5, 462]</p>
+          <dl class="readout">
+            <dt>its value now</dt><dd id="rW">—</dd>
+            <dt>pixel brightness x</dt><dd id="rX">—</dd>
+            <dt>blame at the neuron δ</dt><dd id="rD" class="red">—</dd>
+            <dt>paths to the loss</dt><dd id="rP">—</dd>
+            <dt>slope by the chain</dt><dd id="rG" class="red">—</dd>
+            <dt>slope by nudging</dt><dd id="rN" class="ok">—</dd>
+          </dl>
+          <p class="sub" id="why" style="margin-top:0.7rem">—</p>
+          <p class="sub" style="font-size:0.78rem">The weights here are stored to four decimals, so the last digits can differ slightly from the video’s.</p>
+          <h4 style="margin-top:1.2rem">Take one step</h4>
+          <p class="sub">Move every dial against its slope, by a step of size <em>η</em>.</p>
+          <input type="range" id="eta" min="0" max="0.3" step="0.01" value="0" aria-label="Step size">
+          <div class="eta-row"><span>0</span><b id="etaVal">0.00</b><span>0.30</span></div>
+          <div class="bars" id="bars"></div>
+          <dl class="readout"><dt>loss on the 7</dt><dd id="rL" class="hot">—</dd><dt>multiplications</dt><dd id="rM">—</dd></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ build it -->
+    <section id="build">
+      <div class="two">
+        <div>
+          <p class="section-kicker"><span class="kicker-bar"></span>Build it yourself</p>
+          <h2>Backprop by hand, checked by nudging.</h2>
+          <p class="lede">One NumPy file. It rebuilds the Chapter 1 network from the same random numbers, runs our 7 forward, walks the blame back with every line visible, checks five random slopes against nudging, counts the multiplications, and then trains a full epoch using nothing but its own backward pass. Put it next to <code>train_net.py</code> from Chapter 1.</p>
+          <div class="row" style="margin-top:1.4rem;display:flex;gap:0.6rem;flex-wrap:wrap"><a class="button button-primary" href="lab/backprop_by_hand.py" download>Download backprop_by_hand.py</a><a class="button button-secondary" href="/learn/s1/c1/lab/train_net.py" download>train_net.py</a></div>
+        </div>
+        <div>
+<pre><span class="c"># Python 3.10+</span>
+pip install numpy
+python backprop_by_hand.py
+
+<span class="c"># expected (well under a minute on a laptop CPU)</span>
+the untrained network says 4 (p[4] = 0.188, p[7] = 0.166)  loss 1.796
+blame at the ten outputs, p - y: … 0.188 … -0.834 …
+layer-1 neurons that fired: 7 of 16   dials with a nonzero slope: 1156 of 13002
+
+dial            backprop     nudging
+W3[0, 2]        0.009904     0.009904
+W1[13, 441]     0.000000     0.000000   <span class="c"># neuron 13 stayed silent</span>
+W2[4, 2]       -0.095552    -0.095552
+W3[7, 0]       -0.602596    -0.602596
+
+nudging every dial: 13,003 forward passes (6,399x more)
+after one epoch: test accuracy 92.1%   digit #328 -> 7</pre>
+          <p class="muted" style="font-size:0.95rem;margin-top:1rem">Try this: delete the <code>* (z1 &gt; 0)</code> gate from the backward pass and run it again. The silent neurons start receiving blame they never earned, and their slopes stop matching nudging. Every link matters.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ credits -->
+    <section id="credits">
+      <p class="section-kicker"><span class="kicker-bar"></span>Credits</p>
+      <h2>Standing on their <span class="serif-accent">shoulders</span>.</h2>
+      <p class="lede">The ideas here belong to the researchers and teachers below. What this series adds is the delivery: the song, the visuals, the writing, and a real model you can inspect. If this helped, go and watch and read theirs.</p>
+      <div class="credits">
+        <div class="glass">
+          <h3>Teaching this builds on</h3>
+          <ul>
+            <li><b>Grant Sanderson · 3Blue1Brown</b><span>“What is backpropagation really doing?” and “Backpropagation calculus” (Deep learning, chapters 3 and 4).</span><a href="https://www.youtube.com/watch?v=Ilg3gGewQ5U" target="_blank" rel="noreferrer">youtube.com/watch?v=Ilg3gGewQ5U</a></li>
+            <li><b>Andrej Karpathy</b><span>“The spelled-out intro to neural networks and backpropagation: building micrograd”.</span><a href="https://www.youtube.com/watch?v=VMj-3S1tku0" target="_blank" rel="noreferrer">youtube.com/watch?v=VMj-3S1tku0</a></li>
+            <li><b>Christopher Olah</b><span>“Calculus on Computational Graphs: Backpropagation”: why reverse mode is cheap.</span><a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noreferrer">colah.github.io</a></li>
+            <li><b>Michael Nielsen</b><span><em>Neural Networks and Deep Learning</em>, chapter 2: how the backpropagation algorithm works.</span><a href="http://neuralnetworksanddeeplearning.com/chap2.html" target="_blank" rel="noreferrer">neuralnetworksanddeeplearning.com</a></li>
+            <li><b>Stanford CS231n</b><span>Course notes: backpropagation, intuitions.</span><a href="https://cs231n.github.io/optimization-2/" target="_blank" rel="noreferrer">cs231n.github.io</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Research</h3>
+          <ul>
+            <li><b>Linnainmaa (1970)</b><span>Master's thesis: the reverse mode of automatic differentiation.</span></li>
+            <li><b>Werbos (1974)</b><span>PhD thesis, <em>Beyond Regression</em>: using it to train neural networks.</span></li>
+            <li><b>Rumelhart, Hinton &amp; Williams (1986)</b><span>Learning representations by back-propagating errors.</span><a href="https://doi.org/10.1038/323533a0" target="_blank" rel="noreferrer">doi:10.1038/323533a0</a></li>
+            <li><b>Baydin, Pearlmutter, Radul &amp; Siskind (2018)</b><span>Automatic differentiation in machine learning: a survey.</span><a href="https://arxiv.org/abs/1502.05767" target="_blank" rel="noreferrer">arXiv:1502.05767</a></li>
+            <li><b>Kaplan et al. (2020)</b><span>Scaling laws for neural language models: the training cost of about 6 operations per parameter per token.</span><a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noreferrer">arXiv:2001.08361</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Production</h3>
+          <ul>
+            <li><b>mexicat · pdoom-video</b><span>The MIT-licensed music-video engine this series is built on. Its song and lyrics are not used.</span><a href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">github.com/mexicat/pdoom-video</a></li>
+            <li><b>ACE-Step 1.5</b><span>Open-source music model (Apache-2.0) that sang our lyrics.</span><a href="https://github.com/ace-step/ACE-Step-1.5" target="_blank" rel="noreferrer">github.com/ace-step/ACE-Step-1.5</a></li>
+            <li><b>Kokoro-82M</b><span>Open-weight text-to-speech model (Apache-2.0) that narrates the chapter.</span><a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noreferrer">github.com/hexgrad/kokoro</a></li>
+            <li><b>Demucs · MMS forced alignment · Whisper</b><span>Used to separate the vocals, time every word, and check the lyrics are sung.</span></li>
+            <li><b>Parvish Gajjar, with Claude</b><span>Lyrics, visuals, writing, and the backpropagation data.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ next -->
+    <section>
+      <div class="next glass" id="next">
+        <div>
+          <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 1 · Chapter 4</p>
+          <h3>Make the Loop Real: a complete training loop, from random numbers to a working network.</h3>
+        </div>
+        <a class="button button-secondary" href="/learn/">All chapters</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · Season 1 · Chapter 3</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=4"></script>
+  <script src="chapter.js?v=1" defer></script>
+</body>
+</html>
