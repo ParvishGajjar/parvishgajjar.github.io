@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Follow the Slope · How AI Works, Season 1 Chapter 2 · Parvish Gajjar</title>
+  <meta name="description" content="How AI Works, Season 1 Chapter 2: how a network measures how wrong it is, finds which way is downhill, and takes a small step. Loss, gradients and gradient descent, on a real loss landscape.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="Follow the Slope — How AI Works, S1·C2">
+  <meta property="og:description" content="A learning series by Parvish Gajjar: a music video, a chapter you can read or listen to, and the real loss landscape of a trained network to roll a ball down.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/s1/c2/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s1/c2/media/poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/s1/c2/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=3">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+    <main class="lp">
+    <!-- ============================================================ hero -->
+    <section class="c-hero">
+      <p class="section-kicker"><span class="kicker-bar"></span><a href="/learn/">How AI Works</a> · Season 1 · Chapter 2</p>
+      <h1>Follow the <span class="serif-accent">Slope</span></h1>
+      <p class="song-tag"><small>Music video</small>“Follow the Slope”</p>
+      <p class="lede">How a network that starts out as 13,002 random numbers learns: measure how wrong it is, find which way is downhill, and take a small step. Then do it again, seven thousand times.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#video">Watch the video</a>
+        <a class="button button-secondary" href="#chapter">Listen to the chapter · 12 min</a>
+      </div>
+    </section>
+
+    <!-- ============================================================ video -->
+    <section id="video" style="border-top:0;padding-top:0">
+      <div class="player" id="player">
+        <video id="mv" src="media/s1c2.mp4" poster="media/poster.jpg" controls playsinline preload="metadata" aria-label="Music video: Follow the Slope"></video>
+      </div>
+    </section>
+
+    <!-- ============================================================ the chapter (read or listen) -->
+    <section id="chapter">
+      <p class="section-kicker"><span class="kicker-bar"></span>The chapter</p>
+      <h2>Read it, or press play and <span class="serif-accent">listen</span>.</h2>
+
+      <div class="listen glass sticky" id="listen" data-state="loading">
+        <button class="listen-btn" id="listenBtn" type="button" aria-label="Play the chapter">
+          <svg id="icoPlay" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>
+          <svg id="icoPause" viewBox="0 0 16 16" aria-hidden="true" hidden><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+        </button>
+        <div class="listen-body">
+          <div class="listen-title"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="listenNow">Listen to this chapter</span><span id="listenTime">—</span></div>
+          <div class="listen-bar" id="listenBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="listenFill"></i></div>
+        </div>
+        <button class="listen-speed" id="listenSpeed" type="button" aria-label="Playback speed">1×</button>
+        <audio id="narration" preload="none" src="audio/chapter.mp3"></audio>
+      </div>
+
+      <article class="story lp-read" id="story">
+        <p>At the end of Chapter 1, our network looked at a handwritten seven and said “seven”, 99.5% sure. It did that with 13,002 numbers that no person chose. Every one of them started out random. This chapter is about the idea that turned those random numbers into a working network, and it's the same idea that trains every large model you've heard of.</p>
+        <p>It has three parts. Measure how wrong the network is. Work out which way to change each number so it becomes a little less wrong. Then change them all a little in that direction, and repeat.</p>
+
+        <h2 id="untrained">Before it learned anything</h2>
+        <p data-say="To see where training starts, we built the exact same network with the exact same random starting numbers, and showed it the same seven from Chapter 1. Its answer: four. It gave the four 18.8 percent and the seven 16.6 percent. Everything else got something in between.">To see where training starts, we rebuilt the exact same network with the exact same random starting numbers and showed it the same seven from Chapter 1. Its answer: <em>four</em>. It gave the four 18.8% and the seven 16.6%. Everything else got something in between.</p>
+        <p data-say="Those percentages come from softmax, which you met at the end of Chapter 1. The last layer produces ten raw scores. Softmax turns them into ten probabilities that are all positive and add up to one. An untrained network's scores are close to random, so its probabilities are spread out, and whichever digit wins does so by accident.">Those percentages come from <strong class="term">softmax</strong>, which you met at the end of Chapter 1. The last layer produces ten raw scores; softmax turns them into ten probabilities that are all positive and add up to 1. An untrained network's scores are close to random, so its probabilities are spread out, and whichever digit wins does so by accident.</p>
+        <span class="real" data-say="The untrained network, shown our seven: four at 18.8 percent, seven at 16.6 percent.">Untrained, shown our 7: “4” at 18.8% · the 7 at 16.6%</span>
+
+        <h2 id="loss">One number for how wrong</h2>
+        <p>To improve something, you first need to measure it. Training needs a single number that says how wrong the network is. That number is called the <strong class="term">loss</strong>. Low loss means good; the whole job of training is to make it go down.</p>
+        <p data-say="For a network that picks between answers, the standard loss looks only at one number: p, the probability the network gave to the correct answer. The loss is minus the logarithm of p. This is called cross-entropy loss.">For a network that picks between answers, the standard loss looks at just one number: <em>p</em>, the probability the network gave to the <em>correct</em> answer. The loss is minus the logarithm of <em>p</em>. This is called <strong class="term">cross-entropy loss</strong>.</p>
+        <span class="eq" data-say="loss equals minus log p.">loss = −log <em>p</em></span>
+        <p data-say="The logarithm does something useful here. If the network is sure and right, p is close to one, and minus log p is close to zero. If it gives the right answer a tiny chance, p is close to zero, and the loss shoots up without limit. A confident wrong answer costs far more than a hesitant one. For our seven, the untrained network gave the right answer 0.166, so its loss is 1.80.">The logarithm does something useful here. If the network is sure and right, <em>p</em> is close to 1 and −log <em>p</em> is close to 0. If it gives the right answer only a tiny chance, <em>p</em> is close to 0 and the loss shoots up without limit. A confident wrong answer costs far more than a hesitant one. For our 7, the untrained network gave the right answer 0.166, so its loss is 1.80.</p>
+        <p data-say="There's a useful landmark. A network that knows nothing and spreads its bets evenly gives every digit one in ten. Minus log of 0.1 is 2.30. Averaged over 10,000 test digits, our untrained network scores 2.38, almost exactly a blind guess. After training, the same seven scores 0.005.">There's a useful landmark. A network that knows nothing and spreads its bets evenly gives every digit 1 in 10, and −log 0.1 is <strong>2.30</strong>. Averaged over 10,000 test digits, our untrained network scores 2.38, almost exactly a blind guess. After training, the same 7 scores 0.005.</p>
+        <span class="real" data-say="Loss for our seven: 1.80 untrained. 2.30 for a blind guess. 0.005 trained.">Our 7: loss 1.80 untrained · 2.30 = a blind guess · 0.005 trained</span>
+        <p>In practice the loss is averaged over a group of examples, not taken from one digit. But it's always the same idea: one number that goes down as the network gets more things right, and more confidently.</p>
+
+        <h2 id="dials">Thirteen thousand dials</h2>
+        <p>Think of the network's 13,002 numbers as dials. Each one affects the answer a little. Training has to decide, for every dial, which way to turn it.</p>
+        <p data-say="Here's the simplest possible way to find out. Take one dial, turn it a tiny bit, and see what happens to the loss. We did this with the bias of neuron 6, Chapter 1's star neuron, using the first 64 training digits. Its starting value is zero, and the loss is 2.4219. Turn it to minus 0.1 and the loss drops to 2.4087. Turn it to plus 0.1 and the loss rises to 2.4371.">Here's the simplest possible way to find out: take one dial, turn it a tiny bit, and see what happens to the loss. We did this with the bias of neuron 6, Chapter 1's star neuron, using the first 64 training digits. It starts at 0.00, where the loss is 2.4219. Turn it to −0.10 and the loss drops to 2.4087. Turn it to +0.10 and the loss rises to 2.4371.</p>
+        <span class="real" data-say="Neuron 6's bias: minus 0.1 gives 2.4087. Zero gives 2.4219. Plus 0.1 gives 2.4371.">Neuron 6's bias: −0.10 → 2.4087 · 0.00 → 2.4219 · +0.10 → 2.4371</span>
+        <p data-say="So turning this dial up makes things worse, and turning it down makes things better. How much worse, per unit of turning, is the slope: the change in loss, 0.028, divided by the change in the dial, 0.2. That's 0.142. In calculus this slope is called a derivative, and because we held every other dial still while we measured it, a partial derivative.">So turning this dial up makes things worse and turning it down makes things better. <em>How much</em> worse, per unit of turning, is the slope: the change in loss, 0.028, divided by the change in the dial, 0.2. That's 0.142. In calculus this is called a <strong class="term">derivative</strong>; because we held every other dial still while we measured it, a <strong class="term">partial derivative</strong>.</p>
+        <p data-say="Every one of the 13,002 dials has its own slope. Put all 13,002 slopes in one list and you have the gradient, written g. It's the single most important object in machine learning. The gradient tells you, for every dial at once, which way is uphill for the loss and how steep it is.">Every one of the 13,002 dials has its own slope. Put all 13,002 slopes in one list and you have the <strong class="term">gradient</strong>, written <em>g</em>. It's the single most important object in machine learning: for every dial at once, it says which way is uphill for the loss, and how steep.</p>
+        <div class="aside" data-say="A note on how the gradient is actually found. Nudging dials one at a time would work, but it would take 13,002 extra passes through the network for every single training step. Real training computes all 13,002 slopes exactly, in about the cost of one extra pass, with an algorithm called backpropagation. We checked: for neuron 6's bias, backpropagation gives 0.142, the same as our nudging. How it does that is Chapter 3."><b>How the gradient is really found.</b> Nudging dials one at a time works, but it would take 13,002 extra passes through the network for every single step. Real training computes all 13,002 slopes exactly, for about the cost of one extra pass, with an algorithm called <em>backpropagation</em>. For neuron 6's bias it gives 0.142, the same as our nudging. How it does that is Chapter 3.</div>
+
+        <h2 id="descent">Downhill: one line of maths</h2>
+        <p data-say="The gradient points uphill. We want to go down. So we move every dial a small step in the opposite direction of its slope. That's gradient descent, and it is one line.">The gradient points uphill. We want to go down. So we move every dial a small step in the <em>opposite</em> direction of its slope. That's <strong class="term">gradient descent</strong>, and it's one line:</p>
+        <span class="eq" data-say="w becomes w minus eta times g.">w ← w − η g</span>
+        <p data-say="w is any dial. g is its slope. The minus sign is what turns uphill into downhill: a dial with a positive slope gets turned down, one with a negative slope gets turned up, and a dial whose slope is almost zero barely moves. And eta, the Greek letter that looks like an n with a tail, is the size of the step. It's called the learning rate."><em>w</em> is any dial and <em>g</em> is its slope. The minus sign is what turns uphill into downhill: a dial with a positive slope gets turned down, one with a negative slope gets turned up, and a dial whose slope is nearly zero barely moves. <em>η</em> (eta) is the size of the step, called the <strong class="term">learning rate</strong>.</p>
+        <p data-say="That's the whole method. Measure the loss, get the gradient, step against it, and repeat. Our network did this 7,504 times. Its loss on the training digits went from 2.38 to 0.14, and its accuracy on 10,000 digits it had never seen went from 8.7 percent, no better than guessing, to 95.2 percent.">That's the whole method: measure the loss, get the gradient, step against it, repeat. Our network did this 7,504 times. Its loss on training digits went from 2.38 to 0.14, and its accuracy on 10,000 digits it had never seen went from 8.7%, no better than guessing, to 95.2%.</p>
+        <div class="aside" data-say="The fine print. Our network was actually trained with Adam, the most widely used variant of gradient descent, with a learning rate of 0.002. Adam still steps against the gradient, but it smooths each dial's slope over recent steps, which is called momentum, and it scales each dial's step by how large that dial's slopes have been, so every dial moves at a sensible pace. Nearly every large model today is trained with Adam or its close relative AdamW."><b>The fine print.</b> Our network was actually trained with <strong>Adam</strong>, the most widely used variant of gradient descent, with η = 0.002. Adam still steps against the gradient, but it smooths each dial's slope over recent steps (momentum) and scales each dial's step by how large its slopes have been, so every dial moves at a sensible pace. Nearly every large model today is trained with Adam or its relative AdamW.</div>
+
+        <h2 id="batches">Sixty-four at a time</h2>
+        <p data-say="To get the true gradient, you'd have to run all 60,000 training digits through the network before every single step. That's slow. Instead, each step looks at a small random group, called a batch or mini-batch. Ours used 64 digits per step. The gradient from 64 digits isn't exact. It's a noisy estimate of the true one. But it's 900 times cheaper, and it points roughly the right way.">To get the true gradient you'd have to run all 60,000 training digits through the network before every single step. That's slow. Instead, each step looks at a small random group called a <strong class="term">batch</strong>. Ours used 64 digits per step. The gradient from 64 digits isn't exact; it's a noisy estimate of the true one. But it's more than 900 times cheaper, and it points roughly the right way.</p>
+        <p data-say="This is stochastic gradient descent. Stochastic just means random. The loss on each batch jumps around from step to step, but the trend goes steadily down. 938 batches of 64 make one full pass over the training digits, one epoch. Eight epochs made our 7,504 steps. The idea is older than computers: Herbert Robbins and Sutton Monro showed in 1951 that steps based on noisy estimates still arrive, if the steps are small enough.">This is <strong class="term">stochastic gradient descent</strong>: stochastic just means random. The loss on each batch jumps around, but the trend goes steadily down. 938 batches of 64 make one pass over the training digits (one epoch); eight epochs made our 7,504 steps. The idea is older than neural networks: Herbert Robbins and Sutton Monro showed in 1951 that steps based on noisy estimates still arrive, provided the steps are small enough.</p>
+
+        <h2 id="rate">Too big, too small</h2>
+        <p>The learning rate is the one knob you always have to set, and it's easy to get wrong in both directions.</p>
+        <p data-say="Too big, and each step overshoots. The network jumps across the valley it was trying to go down, lands higher on the far side, and jumps back even further. The loss bounces, and can blow up completely. Too small, and every step is safe but tiny. After thousands of steps the network has barely moved. In the video, on a slice of our network's real loss surface, a step size of 45 settles into the valley, 89 bounces from wall to wall until it's thrown off the map, and 0.3 has hardly left the starting point.">Too big, and each step overshoots: the network jumps across the valley it was trying to go down, lands higher on the far side, and jumps back even further. The loss bounces and can blow up completely. Too small, and every step is safe but tiny; after thousands of steps the network has barely moved. In the video, on a slice of our network's real loss surface, a step size of 45 settles into the valley, 89 bounces from wall to wall until it's thrown off the map, and 0.3 has hardly left the starting point.</p>
+        <span class="real" data-say="Plain gradient descent on the full network, one epoch. Learning rate 0.001: 42 percent right. 0.1: 91.8 percent. 2: 10.1 percent, no better than guessing.">Plain gradient descent, one epoch · η = 0.001: 42.0% · η = 0.1: 91.8% · η = 2: 10.1% (guessing)</span>
+        <p>Those last numbers come from the script at the bottom of this page. You can run it yourself and watch all three happen.</p>
+
+        <h2 id="landscape">A landscape you can't see</h2>
+        <p data-say="Picture the loss as the height of a landscape. Every possible setting of the dials is a place, and the height there is how wrong the network is. Training is a walk downhill. The trouble is that our landscape has 13,002 directions to move in, one per dial. Nobody can picture that.">Picture the loss as the height of a landscape. Every possible setting of the dials is a place, and the height there is how wrong the network is. Training is a walk downhill. The trouble is that our landscape has 13,002 directions to move in, one per dial. Nobody can picture that.</p>
+        <p data-say="So researchers take slices. Pick two directions, and measure the real loss at every point on the flat sheet they span. In 2014 Ian Goodfellow and colleagues looked along the straight line from a network's starting point to its trained point. In 2018 Hao Li and colleagues drew two-dimensional slices, which is where the famous pictures of loss landscapes come from.">So researchers take slices: pick two directions and measure the real loss at every point of the flat sheet they span. In 2014, Ian Goodfellow and colleagues looked along the straight line from a network's starting point to its trained point. In 2018, Hao Li and colleagues drew two-dimensional slices, the source of the well-known pictures of loss landscapes.</p>
+        <p data-say="The landscape in our video is one of these slices, computed from our own network. Its first direction runs from the untrained start to the trained end. Its second passes through the point where the training path bends furthest from that line, at step 1,548. Every height is the network's true loss, measured on 2,000 training digits, at 14,641 points. The glowing path is the real training run, projected onto the slice.">The landscape in our video is one of these slices, computed from our own network. Its first direction runs from the untrained start to the trained end; its second passes through the point where the training path bends furthest from that line, at step 1,548. Every height is the network's true loss, measured on 2,000 training digits at 14,641 points, and the glowing path is the real training run, projected onto the slice.</p>
+        <p data-say="Two honest caveats. A slice is a slice: the real path wanders slightly out of the sheet, and there are 13,000 other directions we aren't drawing. And in very high dimensions, the intuition of getting trapped in a small dip mostly doesn't hold. Most flat spots in huge networks are saddles, downhill in some direction, which gradient descent eventually finds.">Two honest caveats. A slice is a slice: the real path wanders slightly out of the sheet, and there are 13,000 other directions we aren't drawing. And in very high dimensions the intuition of getting stuck in a small dip mostly doesn't hold. Most flat spots in large networks turn out to be <em>saddles</em>, still downhill in some direction, which gradient descent eventually finds.</p>
+
+        <h2 id="today">Where this lives today</h2>
+        <p data-say="Everything in this chapter scales up without changing. A large language model is trained on exactly this loop. Its job is to predict the next piece of text, called a token. Its loss is the same minus log p, where p is the probability it gave to the token that actually came next, choosing among tens of thousands of possible tokens instead of ten digits. Its gradient has billions of entries instead of 13,002. Its batches hold millions of tokens instead of 64 digits. And it's trained with Adam, like ours.">Everything in this chapter scales up without changing. A large language model is trained on exactly this loop. Its job is to predict the next piece of text, called a <em>token</em>. Its loss is the same −log <em>p</em>, where <em>p</em> is the probability it gave to the token that actually came next, chosen from tens of thousands of possible tokens instead of ten digits. Its gradient has billions of entries instead of 13,002. Its batches hold millions of tokens instead of 64 digits. And it's trained with Adam, like ours.</p>
+        <p data-say="There's one question we've skipped. How does the network get 13,002 slopes, or billions, in one go? Every dial's effect on the loss travels through a chain: from the dial, through the layers, out to the ten lights, and into the loss. Chapter 3 follows that chain backwards.">There's one question we've skipped: how does the network get 13,002 slopes, or billions, in one go? Every dial's effect on the loss travels through a chain: from the dial, through the layers, out to the ten lights and into the loss. Chapter 3 follows that chain backwards.</p>
+        <p>Measure how wrong. Find the slope. Take a small step down. That's how every neural network learns.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ try it -->
+    <section id="try">
+      <p class="section-kicker"><span class="kicker-bar"></span>Try it · the real loss landscape</p>
+      <h2>Roll it <span class="serif-accent">downhill</span>.</h2>
+      <p class="lede">This is the slice from the video: our network's true loss at 14,641 points on a sheet through its untrained start, the bend at step 1,548, and its trained end. Dark is low loss, bright is high. Click anywhere to drop the network there, choose a learning rate, and run gradient descent.</p>
+      <div class="land-grid">
+        <div class="panel glass">
+          <div class="land"><canvas id="land" width="720" height="720" aria-label="Loss landscape contour map; click to drop a starting point"></canvas><div class="hint" id="landHint">click to drop the network anywhere</div></div>
+        </div>
+        <div class="panel glass">
+          <h4>Step size · the learning rate</h4>
+          <p class="sub">The size of each step against the slope.</p>
+          <input type="range" id="eta" min="0" max="100" step="0.1" value="80.4" aria-label="Learning rate">
+          <div class="eta-row"><span>0.1</span><b id="etaVal">45</b><span>200</span></div>
+          <div class="presets" role="group" aria-label="Presets">
+            <button type="button" class="chip" data-eta="0.3">too small · 0.3</button>
+            <button type="button" class="chip" data-eta="45">just right · 45</button>
+            <button type="button" class="chip" data-eta="89">too big · 89</button>
+          </div>
+          <div class="row">
+            <button class="button button-primary" id="run" type="button">Run 60 steps</button>
+            <button class="button button-secondary" id="reset" type="button">Start from untrained</button>
+          </div>
+          <label class="toggle"><input type="checkbox" id="showPath" checked> show the real training path (Adam, 7,504 steps)</label>
+          <dl class="readout">
+            <dt>step</dt><dd id="rStep">0</dd>
+            <dt>loss here</dt><dd id="rLoss" class="hot">—</dd>
+            <dt>slope size |g|</dt><dd id="rGrad">—</dd>
+          </dl>
+          <svg class="spark" id="spark" viewBox="0 0 300 80" role="img" aria-label="Loss at each step"></svg>
+          <p class="sub" style="margin-top:0.8rem">Only this 2D slice is searched here, so it's a picture of the idea, not a full training run. The real run moved all 13,002 numbers at once.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ build it -->
+    <section id="build">
+      <div class="two">
+        <div>
+          <p class="section-kicker"><span class="kicker-bar"></span>Build it yourself</p>
+          <h2>Three learning rates, one network.</h2>
+          <p class="lede">One NumPy file. It starts the Chapter 1 network from the same random numbers and trains it for one epoch with plain gradient descent, w ← w − η g, at three step sizes. Every line of the update is visible. Put it next to <code>train_net.py</code> from Chapter 1.</p>
+          <div class="row" style="margin-top:1.4rem;display:flex;gap:0.6rem;flex-wrap:wrap"><a class="button button-primary" href="lab/follow_the_slope.py" download>Download follow_the_slope.py</a><a class="button button-secondary" href="lab/train_net.py" download>train_net.py</a></div>
+        </div>
+        <div>
+<pre><span class="c"># Python 3.10+</span>
+pip install numpy
+python follow_the_slope.py
+
+<span class="c"># expected (under a minute on a laptop CPU)</span>
+eta = 0.001  loss every 100 steps: 2.42 2.27 2.21 … 1.62   test accuracy 42.0%
+eta = 0.1    loss every 100 steps: 2.42 0.56 0.42 … 0.15   test accuracy 91.8%
+eta = 2.0    loss every 100 steps: 2.42 2.31 2.33 … 2.29   test accuracy 10.1%</pre>
+          <p class="muted" style="font-size:0.95rem;margin-top:1rem">Try this: change the batch size from 64 to 1, then to 6,000, and compare how fast each learns per second. That's the trade-off behind every training run.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ credits -->
+    <section id="credits">
+      <p class="section-kicker"><span class="kicker-bar"></span>Credits</p>
+      <h2>Standing on their <span class="serif-accent">shoulders</span>.</h2>
+      <p class="lede">The ideas here belong to the researchers and teachers below. What this series adds is the delivery: the song, the visuals, the writing, and a real model you can inspect. If this helped, go and watch and read theirs.</p>
+      <div class="credits">
+        <div class="glass">
+          <h3>Teaching this builds on</h3>
+          <ul>
+            <li><b>Grant Sanderson · 3Blue1Brown</b><span>“Gradient descent, how neural networks learn” (Deep learning, chapter 2).</span><a href="https://www.youtube.com/watch?v=IHZwWFHWa-w" target="_blank" rel="noreferrer">youtube.com/watch?v=IHZwWFHWa-w</a></li>
+            <li><b>Michael Nielsen</b><span><em>Neural Networks and Deep Learning</em>, chapter 1: learning with gradient descent.</span><a href="http://neuralnetworksanddeeplearning.com/chap1.html" target="_blank" rel="noreferrer">neuralnetworksanddeeplearning.com</a></li>
+            <li><b>Andrej Karpathy</b><span>“The spelled-out intro to neural networks and backpropagation: building micrograd”.</span><a href="https://www.youtube.com/watch?v=VMj-3S1tku0" target="_blank" rel="noreferrer">youtube.com/watch?v=VMj-3S1tku0</a></li>
+            <li><b>Stanford CS231n</b><span>Course notes: Optimization.</span><a href="https://cs231n.github.io/optimization-1/" target="_blank" rel="noreferrer">cs231n.github.io</a></li>
+            <li><b>Goodfellow, Bengio &amp; Courville</b><span><em>Deep Learning</em> (2016), chapters 4 and 8.</span><a href="https://www.deeplearningbook.org/" target="_blank" rel="noreferrer">deeplearningbook.org</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Research</h3>
+          <ul>
+            <li><b>Cauchy (1847)</b><span>The method of steepest descent.</span></li>
+            <li><b>Robbins &amp; Monro (1951)</b><span>A stochastic approximation method: noisy steps that still arrive.</span><a href="https://doi.org/10.1214/aoms/1177729586" target="_blank" rel="noreferrer">doi:10.1214/aoms/1177729586</a></li>
+            <li><b>Kingma &amp; Ba (2014)</b><span>Adam: a method for stochastic optimization.</span><a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noreferrer">arXiv:1412.6980</a></li>
+            <li><b>Goodfellow, Vinyals &amp; Saxe (2014)</b><span>Qualitatively characterizing neural network optimization problems: the loss along the line from start to end.</span><a href="https://arxiv.org/abs/1412.6544" target="_blank" rel="noreferrer">arXiv:1412.6544</a></li>
+            <li><b>Dauphin et al. (2014)</b><span>Saddle points, not local minima, in high-dimensional optimization.</span><a href="https://arxiv.org/abs/1406.2572" target="_blank" rel="noreferrer">arXiv:1406.2572</a></li>
+            <li><b>Li, Xu, Taylor, Studer &amp; Goldstein (2018)</b><span>Visualizing the loss landscape of neural nets: the slicing method behind our landscape.</span><a href="https://arxiv.org/abs/1712.09913" target="_blank" rel="noreferrer">arXiv:1712.09913</a></li>
+            <li><b>Rumelhart, Hinton &amp; Williams (1986)</b><span>Backpropagation, the subject of Chapter 3.</span><a href="https://doi.org/10.1038/323533a0" target="_blank" rel="noreferrer">doi:10.1038/323533a0</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Production</h3>
+          <ul>
+            <li><b>mexicat · pdoom-video</b><span>The MIT-licensed music-video engine this series is built on, including the engraved-contour look of the landscape. Its song and lyrics are not used.</span><a href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">github.com/mexicat/pdoom-video</a></li>
+            <li><b>ACE-Step 1.5</b><span>Open-source music model (Apache-2.0) that sang our lyrics.</span><a href="https://github.com/ace-step/ACE-Step-1.5" target="_blank" rel="noreferrer">github.com/ace-step/ACE-Step-1.5</a></li>
+            <li><b>Kokoro-82M</b><span>Open-weight text-to-speech model (Apache-2.0) that narrates the chapter.</span><a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noreferrer">github.com/hexgrad/kokoro</a></li>
+            <li><b>Demucs · MMS forced alignment · Whisper</b><span>Used to separate the vocals, time every word, and check the lyrics are sung.</span></li>
+            <li><b>Parvish Gajjar, with Claude</b><span>Lyrics, visuals, writing, and the landscape computation.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ next -->
+    <section>
+      <div class="next glass" id="next">
+        <div>
+          <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 1 · Chapter 3</p>
+          <h3>Every Link Matters: how the chain rule finds all 13,002 slopes at once.</h3>
+        </div>
+        <a class="button button-secondary" href="/learn/">All chapters</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · Season 1 · Chapter 2</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=3"></script>
+  <script src="chapter.js?v=1" defer></script>
+</body>
+</html>

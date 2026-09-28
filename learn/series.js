@@ -9,8 +9,9 @@ window.SERIES = {
       chapters: [
         { n: 1, id: 's1c1', title: 'What a Neuron Computes', song: 'Seven Hundred Eighty-Four', status: 'live', url: '/learn/s1/c1/',
           thumb: '/learn/s1/c1/media/f3-weights-sm.jpg', blurb: 'Pixels become numbers; a neuron multiplies, adds and keeps what’s above zero.' },
-        { n: 2, id: 's1c2', title: 'Every Link Matters', status: 'next', blurb: 'The chain rule and backpropagation: how the network learns which way to turn each dial.' },
-        { n: 3, id: 's1c3', title: 'Follow the Slope', status: 'planned', blurb: 'Loss, softmax and gradient descent: measuring “wrong” and walking downhill.' },
+        { n: 2, id: 's1c2', title: 'Follow the Slope', song: 'Follow the Slope', status: 'live', url: '/learn/s1/c2/',
+          thumb: '/learn/s1/c2/media/poster-sm.jpg', blurb: 'Loss, gradients and gradient descent: measure how wrong, find the slope, take a small step down.' },
+        { n: 3, id: 's1c3', title: 'Every Link Matters', status: 'next', blurb: 'The chain rule and backpropagation: how all 13,002 slopes are found at once.' },
         { n: 4, id: 's1c4', title: 'Make the Loop Real', status: 'planned', blurb: 'A complete training loop, from random numbers to 95% on handwritten digits.' },
       ],
     },

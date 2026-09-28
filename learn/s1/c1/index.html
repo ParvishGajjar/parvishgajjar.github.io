@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css?v=7babe92">
-  <link rel="stylesheet" href="/learn/learn.css?v=2">
+  <link rel="stylesheet" href="/learn/learn.css?v=3">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -122,21 +122,21 @@
         <span class="real" data-say="For our seven, 9 of the 16 neurons in the first layer fire, and 14 of the 16 in the second.">For this 7: 9 of 16 first-layer neurons fire; 14 of 16 in the second layer</span>
 
         <h2 id="answer">Ten lights: the answer</h2>
-        <p>The last layer has ten neurons, one for each digit from 0 to 9. Their raw scores go through <strong class="term">softmax</strong>, a function that turns any list of scores into <em>probabilities</em>: numbers between 0 and 1 that add up to exactly 1. The biggest one is the network's answer. Softmax gets a proper look in Chapter 3.</p>
+        <p>The last layer has ten neurons, one for each digit from 0 to 9. Their raw scores go through <strong class="term">softmax</strong>, a function that turns any list of scores into <em>probabilities</em>: numbers between 0 and 1 that add up to exactly 1. The biggest one is the network's answer. Softmax comes back in Chapter 2.</p>
         <span class="real" data-say="The network says seven, with probability 0.995. It's 99.5 percent sure.">“7” with probability 0.995</span>
 
         <h2 id="learned">Nobody wrote the weights</h2>
         <p data-say="Count every weight and bias in this network and you get 13,002 numbers, called its parameters. No person chose a single one of them.">Count every weight and bias in this network and you get 13,002 numbers, called its <strong class="term">parameters</strong>. No person chose a single one of them.</p>
         <p data-say="They started as random numbers. Then the network was shown 60,000 labelled training digits, 64 at a time, and after each group every parameter was nudged slightly in whichever direction made the network a little less wrong. That's training. It took 7,504 nudges: eight full passes through the training digits. Each full pass is called an epoch.">They started as random numbers. Then the network was shown 60,000 labelled training digits, 64 at a time, and after each group every parameter was nudged slightly in whichever direction made the network a little less wrong. That's <strong class="term">training</strong>. It took 7,504 nudges: eight full passes through the training digits. Each full pass is called an <strong class="term">epoch</strong>.</p>
         <span class="real" data-say="Tested on 10,000 digits it had never seen, the network got 93.3 percent right after the first epoch, and 95.2 percent after eight. Guessing at random would get about 10 percent.">Test accuracy on 10,000 unseen digits: 93.3% after epoch 1 → 95.2% after epoch 8 (random guessing: 10%)</span>
-        <p data-say="How does the network know which way to nudge each of its 13,002 numbers? That's the question for Chapter 2. Its answer, called backpropagation, is how every neural network, including the largest ones, learns.">How does the network know which way to nudge each of 13,002 numbers? That's the question for Chapter 2, and its answer, called <em>backpropagation</em>, is how every neural network, including the largest ones, learns.</p>
+        <p data-say="How does the network know which way to nudge each of its 13,002 numbers? That's the question for the next two chapters. Chapter 2 is about the slope: which direction counts as less wrong. Chapter 3 is about backpropagation, how the network finds that direction for every number at once. Together they're how every neural network, including the largest ones, learns.">How does the network know which way to nudge each of 13,002 numbers? That's the question for the next two chapters: Chapter 2 is about the slope, which direction counts as “less wrong”; Chapter 3 is about <em>backpropagation</em>, how the network finds that direction for every number at once. Together they're how every neural network, including the largest ones, learns.</p>
 
         <h2 id="history">How we got here</h2>
         <p>None of this is new. The ideas in this chapter are decades old; what changed was scale, and one invention in 2017.</p>
         <ul class="timeline" data-say="In 1943, McCulloch and Pitts describe a mathematical neuron. In 1958, Frank Rosenblatt's perceptron learns its own weights from examples. In 1986, Rumelhart, Hinton and Williams show backpropagation training networks with several layers. In 1998, Yann LeCun's networks read handwritten digits, and MNIST is published. In 2012, a network called AlexNet, trained on graphics cards with a million images, wins the ImageNet contest by a wide margin, and deep learning takes off. In 2017, Google researchers publish a paper called Attention Is All You Need, introducing the transformer. Between 2018 and 2020 come GPT, BERT and GPT-3: transformers trained on enormous amounts of text. And in 2022, ChatGPT: a transformer, further trained to follow instructions.">
           <li><b>1943</b>McCulloch and Pitts describe a mathematical neuron.</li>
           <li><b>1958</b>Frank Rosenblatt's perceptron learns its own weights from examples.</li>
-          <li><b>1986</b>Rumelhart, Hinton and Williams show backpropagation training multi-layer networks (Chapter 2).</li>
+          <li><b>1986</b>Rumelhart, Hinton and Williams show backpropagation training multi-layer networks (Chapter 3).</li>
           <li><b>1998</b>Yann LeCun's networks read handwritten digits; MNIST is published.</li>
           <li class="big"><b>2012</b>AlexNet, trained on GPUs with a million images, wins the ImageNet contest by a wide margin. Deep learning takes off.</li>
           <li class="big"><b>2017</b>Google researchers publish “Attention Is All You Need”, introducing the <strong>transformer</strong>.</li>
@@ -267,9 +267,9 @@ hero test[328] p(7)=0.9949 star neuron 6 z=5.927</pre>
       <div class="next glass" id="next">
         <div>
           <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 1 · Chapter 2</p>
-          <h3>How the network learns which way to turn each of its 13,002 dials.</h3>
+          <h3>Follow the Slope: how the network learns which way to turn each of its 13,002 dials.</h3>
         </div>
-        <a class="button button-secondary" href="/learn/">All chapters</a>
+        <a class="button button-primary" href="/learn/s1/c2/">Chapter 2 →</a>
       </div>
     </section>
   </main>
@@ -281,7 +281,7 @@ hero test[328] p(7)=0.9949 star neuron 6 z=5.927</pre>
     </div>
   </footer>
 
-  <script src="/learn/series.js?v=2"></script>
+  <script src="/learn/series.js?v=3"></script>
   <script src="chapter.js?v=2" defer></script>
 </body>
 </html>

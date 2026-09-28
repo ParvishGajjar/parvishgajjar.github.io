@@ -10,7 +10,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "mnist")
-OUT = os.path.join(HERE, "..", "app", "public", "wnw-data", "net.json")
+OUT = os.path.join(HERE, "net.json")
 BASE = "https://storage.googleapis.com/cvdf-datasets/mnist/"
 MD5 = {
     "train-images-idx3-ubyte.gz": "f68b3c2dcbeaaa9fbdd348bbdeb94873",
