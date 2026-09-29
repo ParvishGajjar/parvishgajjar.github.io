@@ -91,7 +91,8 @@
   // ---------------------------------------------------------------- build the bar
   box.classList.add('pl');
   const ui = document.createElement('div'); ui.className = 'pl-ui';
-  const nextLabel = next ? `Next · Chapter ${next.n}` : target ? 'Season from Chapter 1' : '';
+  const chLabel = (c) => (c.season !== me.season ? `Season ${c.season} · Chapter ${c.n}` : `Chapter ${c.n}`);
+  const nextLabel = next ? `Next · ${chLabel(next)}` : target ? `From the start · ${chLabel(target)}` : '';
   ui.innerHTML = `
     <div class="pl-seek" role="slider" aria-label="Seek" tabindex="0" aria-valuemin="0" aria-valuemax="100"><i></i><b></b><u></u></div>
     <div class="pl-row">
@@ -111,7 +112,7 @@
   box.append(big);
   const up = document.createElement('div'); up.className = 'pl-up'; up.setAttribute('role', 'status');
   if (target) up.innerHTML = `<a class="th" href="${target.url}?autoplay=1#video">${target.thumb ? `<img src="${target.thumb}" alt="">` : ''}<span class="bar"></span></a>
-    <small>${next ? `Up next · Chapter ${next.n}` : 'Play the season again'}</small><b>${target.title}</b>
+    <small>${next ? `Up next · ${chLabel(next)}` : 'Play the series again'}</small><b>${target.title}</b>
     <div class="act"><button type="button" data-c>Cancel</button><button type="button" class="go" data-g>Play now</button></div>`;
   box.append(up);
   const $ = (k) => ui.querySelector(`[data-k="${k}"]`);

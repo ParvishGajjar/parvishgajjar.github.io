@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pieces of a Sentence · How AI Works, Season 2 Chapter 1 · Parvish Gajjar</title>
+  <meta name="description" content="How AI Works, Season 2 Chapter 1: how text becomes numbers. A tokenizer learned from scratch on Shakespeare, 512 pieces, and the 128-number places a small GPT learns for them. Every number from one real model.">
+  <meta name="theme-color" content="#0a0d10">
+  <meta property="og:title" content="Pieces of a Sentence — How AI Works, S2·C1">
+  <meta property="og:description" content="A learning series by Parvish Gajjar: a music video, a chapter you can read or listen to, a tokenizer you can type into and a galaxy of 512 learned word-pieces you can fly through.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://parvishgajjar.github.io/learn/s2/c1/">
+  <meta property="og:image" content="https://parvishgajjar.github.io/learn/s2/c1/media/poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://parvishgajjar.github.io/learn/s2/c1/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=7babe92">
+  <link rel="stylesheet" href="/learn/learn.css?v=3">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0d10'/%3E%3Ctext x='50' y='62' font-size='42' text-anchor='middle' fill='%236ee7e0' font-family='Georgia, serif' font-weight='700'%3EPG%3C/text%3E%3C/svg%3E">
+  <style>
+    :root { --violet: #9c8cff; }
+    .s2-kick { color: var(--cyan); }
+    .piece { display: inline-block; font: 500 0.95em/1.2 "JetBrains Mono", monospace; padding: 0.05em 0.35em; margin: 0 0.08em; border-radius: 4px; background: rgba(110, 231, 224, 0.08); border: 1px solid rgba(110, 231, 224, 0.25); color: var(--ink); white-space: pre; }
+    .piece .sp { color: var(--cyan); opacity: 0.8; }
+    .story .real::before { content: "From the season’s model · "; }
+    /* ---- tokenizer lab */
+    .tok-in { width: 100%; min-height: 4.6rem; resize: vertical; padding: 0.8rem 0.9rem; border-radius: var(--radius-sm); background: rgba(0,0,0,0.4); border: 1px solid var(--border-strong); color: var(--ink); font: 400 1.05rem/1.5 "JetBrains Mono", monospace; }
+    .tok-in:focus { outline: none; border-color: var(--cyan); }
+    .tok-out { display: flex; flex-wrap: wrap; gap: 0.35rem 0.25rem; margin-top: 1rem; min-height: 3.6rem; align-content: flex-start; }
+    .tk { display: inline-flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+    .tk b { font: 500 1.02rem/1.25 "JetBrains Mono", monospace; padding: 0.22rem 0.42rem; border-radius: 5px; white-space: pre; color: #0a0d10; }
+    .tk b i { font-style: normal; opacity: 0.55; }
+    .tk small { font: 500 0.66rem/1 "JetBrains Mono", monospace; color: var(--muted); }
+    .tk.nl b { background: rgba(255,255,255,0.08) !important; color: var(--muted) !important; }
+    .tk.unk b { background: transparent !important; color: #ff6b57 !important; border: 1px dashed #ff6b57; }
+    .tok-stats { display: flex; flex-wrap: wrap; gap: 1.4rem; margin-top: 1.2rem; font: 500 0.82rem/1.3 "JetBrains Mono", monospace; color: var(--muted); }
+    .tok-stats b { display: block; font-size: 1.5rem; color: var(--ink); font-weight: 500; }
+    .tok-stats b.hot { color: var(--cyan); }
+    .mlist { list-style: none; margin: 0.6rem 0 0; padding: 0; font: 500 0.78rem/1.75 "JetBrains Mono", monospace; color: var(--muted); max-height: 16rem; overflow: auto; }
+    .mlist li b { color: var(--amber); font-weight: 500; }
+    .mlist li em { font-style: normal; color: var(--ink); }
+    /* ---- galaxy lab */
+    .gal { position: relative; width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-strong); background: radial-gradient(ellipse at 50% 45%, #10161d 0%, #07090c 70%); cursor: grab; touch-action: none; }
+    .gal:active { cursor: grabbing; }
+    .gal canvas { width: 100%; height: 100%; display: block; }
+    .gal .hint { position: absolute; left: 0; right: 0; bottom: 0.7rem; text-align: center; font: 500 0.74rem/1.4 "JetBrains Mono", monospace; color: var(--muted); pointer-events: none; }
+    .gal .stamp { position: absolute; left: 0.9rem; top: 0.8rem; font: 500 0.78rem/1.4 "JetBrains Mono", monospace; color: var(--muted); pointer-events: none; }
+    .gal .stamp b { display: block; font-size: 1.5rem; color: var(--ink); font-weight: 500; }
+    .q { width: 100%; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); background: rgba(0,0,0,0.4); border: 1px solid var(--border-strong); color: var(--ink); font: 400 0.95rem/1.3 "JetBrains Mono", monospace; }
+    .q:focus { outline: none; border-color: var(--cyan); }
+    .nbrs { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 0.8rem; margin-top: 0.5rem; font: 500 0.84rem/1.45 "JetBrains Mono", monospace; }
+    .nbrs span { color: var(--ink); white-space: pre; }
+    .nbrs em { font-style: normal; color: var(--muted); text-align: right; }
+    .nbrs .keep { color: var(--cyan); }
+    .meter { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); margin-top: 0.35rem; overflow: hidden; }
+    .meter i { display: block; height: 100%; background: var(--cyan); width: 0; }
+    /* ---- order lab */
+    .ord { margin-top: 1.4rem; }
+    .ord-row { display: flex; align-items: flex-end; gap: 0.35rem; min-height: 15rem; padding: 0 0 0.4rem; position: relative; border-bottom: 1px solid var(--border-strong); overflow-x: auto; }
+    .ord-col { flex: 1 0 2.6rem; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0.3rem; height: 15rem; }
+    .ord-col i { display: block; width: 62%; border-radius: 4px 4px 0 0; transition: height 0.5s ease, background 0.3s; }
+    .ord-col small { font: 500 0.72rem/1 "JetBrains Mono", monospace; color: var(--muted); }
+    .ord-col b { font: 500 0.86rem/1.2 "JetBrains Mono", monospace; color: var(--ink); white-space: pre; font-weight: 500; }
+    .ord-line { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(236,231,220,0.35); pointer-events: none; }
+    .ord-line span { position: absolute; right: 0; top: -1.2rem; font: 500 0.7rem/1 "JetBrains Mono", monospace; color: var(--muted); }
+    .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; }
+    .seg button { font: 500 0.78rem/1 "JetBrains Mono", monospace; padding: 0.55rem 0.9rem; background: transparent; color: var(--muted); border: 0; cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: rgba(110,231,224,0.14); color: var(--cyan); }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Parvish Gajjar home">
+      <span class="brand-lockup">
+        <span class="brand-name"><span class="brand-first">Parvish</span> <span class="brand-last">Gajjar</span></span>
+        <span class="brand-role" aria-hidden="true">Data Engineer / Toronto</span>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#now">Now</a>
+      <a href="/#work">Work</a>
+      <a href="/learn/" class="is-active">Learn</a>
+      <a href="/#toolkit">Toolkit</a>
+      <a href="/#path">Path</a>
+      <a href="/#connect" class="nav-cta"><span class="nav-cta-dot" aria-hidden="true"></span>Connect</a>
+    </nav>
+  </header>
+
+  <main class="lp">
+    <!-- ============================================================ hero -->
+    <section class="c-hero">
+      <p class="section-kicker"><span class="kicker-bar"></span><a href="/learn/">How AI Works</a> · <span class="s2-kick">Season 2</span> · Chapter 1</p>
+      <h1>Pieces of a <span class="serif-accent">Sentence</span></h1>
+      <p class="song-tag"><small>Music video</small>“Pieces of a Sentence”</p>
+      <p class="lede">A computer holds only numbers, and a sentence isn’t one. Before a GPT can read a word, text has to be cut into pieces, every piece given a number, and every number given a place, a list of 128 numbers the model learns, where words used alike end up close together. This is the first layer of every language model, built from scratch on Shakespeare.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#video">Watch the video</a>
+        <a class="button button-secondary" href="#chapter">Listen to the chapter · 13 min</a>
+        <a class="button button-secondary" href="#try">Fly through the galaxy</a>
+      </div>
+    </section>
+
+    <!-- ============================================================ video -->
+    <section id="video" style="border-top:0;padding-top:0">
+      <div class="player" id="player">
+        <video id="mv" src="media/s2c1.mp4" poster="media/poster.jpg" controls playsinline preload="metadata" aria-label="Music video: Pieces of a Sentence"></video>
+      </div>
+    </section>
+
+    <!-- ============================================================ the chapter (read or listen) -->
+    <section id="chapter">
+      <p class="section-kicker"><span class="kicker-bar"></span>The chapter</p>
+      <h2>Read it, or press play and <span class="serif-accent">listen</span>.</h2>
+
+      <div class="listen glass sticky" id="listen" data-state="loading">
+        <button class="listen-btn" id="listenBtn" type="button" aria-label="Play the chapter">
+          <svg id="icoPlay" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5v11l9-5.5z"/></svg>
+          <svg id="icoPause" viewBox="0 0 16 16" aria-hidden="true" hidden><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+        </button>
+        <div class="listen-body">
+          <div class="listen-title"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="listenNow">Listen to this chapter</span><span id="listenTime">—</span></div>
+          <div class="listen-bar" id="listenBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="listenFill"></i></div>
+        </div>
+        <button class="listen-speed" id="listenSpeed" type="button" aria-label="Playback speed">1×</button>
+        <audio id="narration" preload="none" src="audio/chapter.mp3"></audio>
+      </div>
+
+      <article class="story lp-read" id="story">
+        <p data-say="Season 1 taught a small network to read handwritten digits. Season 2 builds the kind of model behind ChatGPT: a G P T, one part at a time. And its first problem comes before any learning. A computer holds only numbers. A sentence isn't one.">Season 1 taught a small network to read handwritten digits. Season 2 builds the kind of model behind ChatGPT, a GPT, one part at a time. Its first problem comes before any learning: a computer holds only numbers, and a sentence isn’t one.</p>
+        <p data-say="So for this season we trained one small G P T, and every number in these chapters comes from it. It read Tiny Shakespeare, 1,115,394 characters from the plays. It has 875,264 parameters: 4 layers, 4 attention heads, 128 numbers for every piece of text, and it looks at up to 128 pieces at a time. It trained for 5,000 steps.">So for this season we trained one small GPT, and every number in these chapters comes from it. It read <strong class="term">Tiny Shakespeare</strong>, 1,115,394 characters from the plays. It has 875,264 parameters: 4 layers, 4 attention heads, 128 numbers for every piece of text, and it looks at up to 128 pieces at a time. It trained for 5,000 steps.</p>
+        <span class="real" data-say="875,264 parameters, trained on 1,115,394 characters of Shakespeare.">875,264 parameters · trained on 1,115,394 characters of Shakespeare</span>
+
+        <h2 id="letters">Letters are already numbers</h2>
+        <p data-say="The simplest way to turn text into numbers is to list every character that appears and number them. Tiny Shakespeare uses only 65: the line break is number 0, the space is number 1, then punctuation marks and symbols, then capital letters, then small ones. The space is the most common, 169,892 times. The line break appears 40,000 times. With this list, the whole text becomes 1,115,394 numbers, and a model can learn to predict the next one.">The simplest way to turn text into numbers is to list every character that appears and number them. Tiny Shakespeare uses only 65: the line break is number 0, the space is number 1, then punctuation marks and symbols, then capital letters, then small ones. The space is the most common, 169,892 times; the line break appears 40,000 times. With this list the whole text becomes 1,115,394 numbers, and a model can learn to predict the next one.</p>
+        <p data-say="That works. Andrej Karpathy's famous char-R N N did exactly this. But it's wasteful. Every word costs many steps, and a model that sees 128 characters at a time sees only a few lines of a play. Most of its effort goes on spelling.">That works; Andrej Karpathy’s famous <em>char-rnn</em> did exactly this. But it’s wasteful. Every word costs many steps, and a model that sees 128 characters at a time sees only a few lines of a play. Most of its effort goes on spelling.</p>
+
+        <h2 id="pieces">Keep the pieces you use the most</h2>
+        <p data-say="The fix is called byte-pair encoding. Go through the whole text and count every pair of neighbouring characters. The most common pair in all of Shakespeare is a space followed by a t, 23,837 times: the start of the, to, thou, that. Glue that pair into one new piece. Count again. Now the most common pair is h and e, 18,203 times. Glue it. Then space and a, 13,541 times. Then o and u, 12,730. Every merge is one new piece, built from two older ones.">The fix is called <strong class="term">byte-pair encoding</strong> (BPE). Go through the whole text and count every pair of neighbouring characters. The most common pair in all of Shakespeare is a space followed by <span class="piece"><span class="sp">·</span>t</span>, 23,837 times: the start of <em>the</em>, <em>to</em>, <em>thou</em>, <em>that</em>. Glue that pair into one new piece. Count again: now it’s <span class="piece">h</span> + <span class="piece">e</span>, 18,203 times. Glue it. Then <span class="piece"><span class="sp">·</span>a</span>, 13,541 times; then <span class="piece">ou</span>, 12,730. Every merge is one new piece, built from two older ones.</p>
+        <p data-say="We repeated that 447 times. 65 characters plus 447 merges gives a vocabulary of 512 pieces. Two rules shape them. The text is first split into words, so a piece never crosses from one word into the next. And a word keeps the space in front of it, as G P T 2 does, so space-say and say without the space are different pieces. On this page a leading space is shown as a small dot.">We repeated that 447 times: 65 characters + 447 merges = a <strong class="term">vocabulary</strong> of 512 pieces. Two rules shape them. The text is first split into words, so a piece never crosses from one word into the next. And a word keeps the space in front of it, as GPT-2 does, so <span class="piece"><span class="sp">·</span>say</span> and <span class="piece">say</span> are different pieces. On this page a leading space is shown as a small dot.</p>
+        <span class="real" data-say="65 characters plus 447 merges equals 512 pieces. First merges: space t, 23,837 times. h e, 18,203. space a, 13,541. o u, 12,730.">65 characters + 447 merges = 512 pieces · first merges: ·t 23,837 · he 18,203 · ·a 13,541 · ou 12,730</span>
+
+        <h2 id="sentence">One sentence, in pieces</h2>
+        <p data-say="Take the line the song keeps coming back to: I never learned to say it. That's 25 characters. Our tokenizer cuts it into 10 pieces.">Take the line the song keeps coming back to: <em>I never learned to say it</em>. That’s 25 characters. Our tokenizer cuts it into 10 pieces:</p>
+        <p class="eq" style="font-style:normal;font-size:1.1rem" data-say="I. Space, n e. v e r. Space, l. e a r. n. e d. Space, to. Space, say. Space, it."><span class="piece">I</span><span class="piece"><span class="sp">·</span>ne</span><span class="piece">ver</span><span class="piece"><span class="sp">·</span>l</span><span class="piece">ear</span><span class="piece">n</span><span class="piece">ed</span><span class="piece"><span class="sp">·</span>to</span><span class="piece"><span class="sp">·</span>say</span><span class="piece"><span class="sp">·</span>it</span></p>
+        <p data-say="15 of the 447 merges touch this sentence along the way. Common words like to, say and it are a single piece each. A rarer word like learned is built from four parts. Across the whole play text, 1,115,394 characters become 516,604 pieces: 2.16 characters per piece on average. The same window of 128 pieces now holds more than twice as much Shakespeare.">15 of the 447 merges touch this sentence along the way. Common words like <em>to</em>, <em>say</em> and <em>it</em> are a single piece each; a rarer word like <em>learned</em> is built from four parts. Across the whole text, 1,115,394 characters become 516,604 pieces, 2.16 characters per piece on average. The same window of 128 pieces now holds more than twice as much Shakespeare.</p>
+        <span class="real" data-say="I never learned to say it: 25 characters, 10 pieces, 15 merges. The whole text: 516,604 pieces, 2.16 characters each.">“I never learned to say it”: 25 characters → 10 pieces, 15 merges · the whole text: 516,604 pieces, 2.16 characters each</span>
+
+        <h2 id="numbers">A number is not a meaning</h2>
+        <p data-say="Each piece is now a number: its place in the list of 512. I is number 21. Space-say is number 322. Space-love is number 324. But these numbers mean nothing. Number 323 is space-here and number 325 is space-their. They sit next to love in the list only because of the order the merges were learned.">Each piece is now a number, its position in the list of 512. <span class="piece">I</span> is #21. <span class="piece"><span class="sp">·</span>say</span> is #322. <span class="piece"><span class="sp">·</span>love</span> is #324. But these numbers mean nothing: #323 is <span class="piece"><span class="sp">·</span>here</span> and #325 is <span class="piece"><span class="sp">·</span>their</span>. They sit next to <em>love</em> only because of the order the merges were learned.</p>
+        <p data-say="So the model doesn't use the number itself. It uses the number to look up a row in a table. The table has 512 rows, one for each piece, and each row holds 128 numbers. That row is the piece's embedding. The table holds 65,536 numbers, about 7.5 percent of the whole model. And they start out random, and are learned by the same loop as everything else in Season 1: forward, loss, backward, step.">So the model doesn’t use the number itself. It uses it to look up a row in a table: 512 rows, one per piece, each holding 128 numbers. That row is the piece’s <strong class="term">embedding</strong>. The table is 512 × 128 = 65,536 numbers, about 7.5% of the whole model, and they start out random. They’re learned by the same loop as everything in Season 1: forward, loss, backward, step.</p>
+        <p data-say="Think of the 128 numbers as a position. Two numbers place a point on a map; three place it in a room; 128 place it in a space we can't picture, but where distance and direction still work exactly the same way.">Think of the 128 numbers as a position. Two numbers place a point on a map; three place it in a room; 128 place it in a space we can’t picture, but where distance and direction work exactly the same way.</p>
+
+        <h2 id="company">You shall know a word by the company it keeps</h2>
+        <p data-say="Nobody tells the model which words are alike. It's only ever trained to predict the next piece. But pieces that appear in the same kinds of places, followed by the same kinds of words, get pushed toward the same kinds of positions, because that helps the prediction. The linguist J. R. Firth put it in 1957: you shall know a word by the company it keeps.">Nobody tells the model which words are alike. It’s only ever trained to predict the next piece. But pieces that appear in the same kinds of places, among the same kinds of words, get pushed toward similar positions, because that helps the prediction. The linguist J. R. Firth put it in 1957: <em>you shall know a word by the company it keeps</em>.</p>
+        <p data-say="To measure how close two pieces are, we compare the directions of their 128-number arrows. Multiply them number by number, add it all up, and divide by both lengths. That's cosine similarity. 1 means pointing the same way. 0 means unrelated.">To measure how close two pieces are, compare the directions of their 128-number arrows: multiply them number by number, add it all up, and divide by both lengths. That’s <strong class="term">cosine similarity</strong>. 1 means pointing the same way; 0 means unrelated.</p>
+        <p class="eq" data-say="Cosine similarity of a and b equals a dot b, divided by the length of a times the length of b.">cos(a, b) = a · b ⁄ (|a| |b|)</p>
+        <p data-say="Here is what our trained model learned. The closest pieces to space-say are think, at 0.74, then see, hear, tell, know and speak. Closest to will: shall, must, should, can, may, would. Closest to my: thy, the, your, his, her, our. Closest to king: son, brother, father, lord. And a comma's nearest neighbours are the other punctuation marks: semicolon, exclamation mark, full stop, colon, question mark.">Here is what our trained model learned. The nearest pieces to <span class="piece"><span class="sp">·</span>say</span> are <em>think</em> (0.74), then <em>see, hear, tell, know, speak</em>. To <span class="piece"><span class="sp">·</span>will</span>: <em>shall, must, should, can, may, would</em>. To <span class="piece"><span class="sp">·</span>my</span>: <em>thy, the, your, his, her, our</em>. To <span class="piece"><span class="sp">·</span>king</span>: <em>son, brother, father, lord</em>. And a comma’s nearest neighbours are the other marks: <span class="piece">;</span> <span class="piece">!</span> <span class="piece">.</span> <span class="piece">:</span> <span class="piece">?</span></p>
+        <span class="real" data-say="Nearest to say: think 0.74, see 0.57, hear 0.56, tell 0.55. Nearest to will: shall 0.68. Nearest to my: thy 0.68. Nearest to king: son 0.61.">nearest to ·say: think 0.74 · see 0.57 · hear 0.56 · tell 0.55 · nearest to ·will: shall 0.68 · to ·my: thy 0.68 · to ·king: son 0.61</span>
+        <p data-say="Love is the most interesting. Its nearest pieces are death, at 0.52, and life, at 0.51. Next comes space-h-a-t, which in these plays is almost always the start of hate. Love and hate mean opposite things, but they keep the same company. I love thee, I hate thee. An embedding learns where a word is used, not what it means to us. It's a tiny model that read one book, so its map is rough. But the pattern is the same one the largest models learn.">Love is the most interesting. Its nearest pieces are <em>death</em> (0.52) and <em>life</em> (0.51). Next comes <span class="piece"><span class="sp">·</span>hat</span>, which in these plays is almost always the start of <em>hate</em>. Love and hate mean opposite things, but they keep the same company: <em>I love thee</em>, <em>I hate thee</em>. An embedding learns where a word is used, not what it means to us. It’s a tiny model that read one book, so its map is rough; but the pattern is the one the largest models learn too.</p>
+
+        <h2 id="forming">Watching the neighbourhoods form</h2>
+        <p data-say="We saved the whole embedding table 17 times during training. At step 0, the neighbours of space-say are nonsense: o, Which, a dash, space b. Of every piece's 8 nearest neighbours, only 2 percent are the ones it will have at the end. By step 100 it's 20 percent. By step 1,000, 67 percent. By step 4,000, 96 percent.">We saved the whole embedding table 17 times during training. At step 0 the neighbours of <span class="piece"><span class="sp">·</span>say</span> are nonsense: <span class="piece">o</span> <span class="piece">Which</span> <span class="piece">-</span> <span class="piece"><span class="sp">·</span>b</span>. Of every piece’s 8 nearest neighbours, only 2% are the ones it will have at the end. By step 100 it’s 20%; by step 1,000, 67%; by step 4,000, 96%.</p>
+        <p data-say="Meanwhile the loss falls. At step 0 it's 6.26 on text the model never trained on. That's what blind guessing among 512 pieces would give: the natural log of 512, 6.24. By the end it's 3.06. The model got better at predicting the next piece, and the neighbourhoods are a side effect of getting better.">Meanwhile the loss falls. At step 0 it’s 6.26 on text the model never trained on: what blind guessing among 512 pieces gives, ln 512 = 6.24. By the end it’s 3.06. The model got better at predicting the next piece, and the neighbourhoods are a side effect of getting better.</p>
+        <span class="real" data-say="Neighbour agreement with the end: 2 percent at step 0, 20 at step 100, 67 at step 1,000, 96 at step 4,000. Held-out loss: 6.26 at step 0, 3.06 at step 5,000.">nearest 8 already final · step 0: 2% · step 100: 20% · step 1,000: 67% · step 4,000: 96% · held-out loss 6.26 → 3.06</span>
+        <div class="aside" data-say="About the galaxy in the video. 128 dimensions can't be drawn, so we squeezed them into 3 with a method called tee-snee, which tries to keep each point's nearest neighbours nearby. It keeps 55 percent of each piece's 8 nearest, against 19 percent for a plain projection. So treat the map as a sketch: the real closeness lives in all 128 numbers."><b>About the galaxy in the video.</b> 128 dimensions can’t be drawn, so we squeezed them into 3 with <em>t-SNE</em>, a method that tries to keep each point’s nearest neighbours nearby. It keeps 55% of each piece’s 8 nearest, against 19% for a plain projection (PCA). Treat the map as a sketch: the real closeness lives in all 128 numbers.</div>
+
+        <h2 id="order">Say it backwards</h2>
+        <p data-say="There's one more thing a sentence has that a list of pieces doesn't: order. So we asked the trained model to read our line and measured how surprised it is by each piece, the same minus log p loss from Season 1. In order, the average is 3.04. That's roughly as unsure as choosing among 21 equally likely pieces. Some pieces it almost knows: after space l, then e a r, it gives n about a 98 percent chance.">There’s one more thing a sentence has that a list of pieces doesn’t: order. So we asked the trained model to read our line and measured how surprised it is by each piece, the same −log <em>p</em> loss from Season 1. In order, the average is 3.04, roughly as unsure as choosing among 21 equally likely pieces. Some pieces it almost knows: after <span class="piece"><span class="sp">·</span>l</span><span class="piece">ear</span>, it gives <span class="piece">n</span> about a 98% chance.</p>
+        <p data-say="Then we fed it the same 10 pieces backwards. The average surprise is 9.03. That's worse than a blind guess among all 512, which would be 6.24. Hamlet's to be, or not to be, that is the question: 3.50 in order, 7.54 backwards. Same pieces, same embeddings. Only the order changed.">Then we fed it the same 10 pieces backwards. The average surprise is 9.03, worse than a blind guess among all 512 (6.24). Hamlet’s <em>To be, or not to be, that is the question</em>: 3.50 in order, 7.54 backwards. Same pieces, same embeddings; only the order changed.</p>
+        <span class="real" data-say="Average surprise per piece. I never learned to say it: 3.04 in order, 9.03 reversed. To be, or not to be: 3.50 in order, 7.54 reversed. Blind guess: 6.24.">average surprise per piece · “I never learned to say it”: 3.04 in order, 9.03 reversed · “To be, or not to be…”: 3.50, 7.54 · blind guess 6.24</span>
+        <p data-say="So how does the model know where a piece is standing? The part that reads the sentence, attention, which is the next chapter, looks at all the pieces at once and on its own has no sense of order at all. So every slot, from 0 to 127, gets its own 128 learned numbers too: a position embedding, another 16,384 numbers. What the model actually reads at each slot is the piece's embedding plus the slot's. Space-say in slot 8 is the 128 numbers of say, plus the 128 numbers of position 8, added together.">So how does the model know where a piece is standing? The part that reads the sentence, <em>attention</em> (the next chapter), looks at all the pieces at once and on its own has no sense of order. So every slot, 0 to 127, gets its own 128 learned numbers too: a <strong class="term">position embedding</strong>, another 128 × 128 = 16,384 numbers. What the model reads at each slot is the piece’s embedding plus the slot’s: <span class="piece"><span class="sp">·</span>say</span> in slot 8 is the 128 numbers of <em>say</em> plus the 128 numbers of position 8, added together.</p>
+        <p class="eq" data-say="Input at slot t equals the token embedding plus the position embedding.">input<sub>t</sub> = embedding(piece) + position(t)</p>
+
+        <h2 id="today">Where this lives today</h2>
+        <p data-say="Every large language model starts exactly like this. G P T 2's tokenizer is byte-pair encoding with 50,257 pieces. It starts from the 256 possible bytes rather than from letters, so any text at all can be written, in any language, even emoji. That's 256 bytes, plus 50,000 merges, plus one special end-of-text marker: our 65 plus 447, at a larger scale. Newer models use vocabularies of 100,000 pieces or more. Llama 3's has 128,256.">Every large language model starts exactly like this. GPT-2’s tokenizer is byte-pair encoding with 50,257 pieces. It starts from the 256 possible bytes rather than from letters, so any text at all can be written, in any language, even emoji: 256 bytes + 50,000 merges + 1 end-of-text marker. Our 65 + 447, at scale. Newer models use vocabularies of 100,000 pieces or more; Llama 3’s has 128,256.</p>
+        <p data-say="The embeddings grow too. Ours have 128 numbers. The smallest G P T 2 had 768. G P T 3 had 12,288. And the pieces explain some famous quirks. Ask a model how many r's are in strawberry, and it has to answer about letters it never directly sees. And text in languages that were rare in the tokenizer's training data gets cut into more, smaller pieces, so it costs more and fits less in the window.">The embeddings grow too: ours have 128 numbers, the smallest GPT-2 had 768, GPT-3 had 12,288. And pieces explain some famous quirks. Ask a model how many r’s are in <em>strawberry</em> and it has to answer about letters it never directly sees. Text in languages that were rare in the tokenizer’s training data gets cut into more, smaller pieces, so it costs more and fits less in the window.</p>
+        <p data-say="The same idea powers search. Embedding models turn whole sentences into vectors, and databases such as Postgres with the p g vector extension find the nearest ones by cosine similarity. That's how retrieval finds the right documents to hand a model: company, measured as angles.">The same idea powers search. Embedding models turn whole sentences into vectors, and databases such as Postgres with the <em>pgvector</em> extension find the nearest ones by cosine similarity. That’s how retrieval finds the right documents to hand a model: company, measured as angles.</p>
+        <p data-say="From a letter to a number, from a number to a place. Next chapter: attention, how every piece looks at every other piece, and decides which ones matter.">From a letter to a number, from a number to a place. Next: <strong class="term">attention</strong>, how every piece looks at every other piece and decides which ones matter.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ try it -->
+    <section id="try">
+      <p class="section-kicker"><span class="kicker-bar"></span>Try it · the season’s real tokenizer and embeddings</p>
+      <h2>Type anything. Watch it <span class="serif-accent">break</span>.</h2>
+      <p class="lede">This is the exact tokenizer our model uses: 65 characters and 447 merges, running in your browser. Type, or drag the slider to replay the merges in the order they were learned and watch your text fuse from letters into pieces.</p>
+      <div class="land-grid">
+        <div class="panel glass">
+          <h4>Your text</h4>
+          <textarea class="tok-in" id="tokIn" spellcheck="false" aria-label="Text to tokenize">I never learned to say it</textarea>
+          <div class="presets" id="tokPresets"></div>
+          <div class="tok-out" id="tokOut" aria-live="polite"></div>
+          <div class="tok-stats"><span><b id="sChars">—</b>characters</span><span><b id="sPieces" class="hot">—</b>pieces</span><span><b id="sRatio">—</b>characters per piece</span></div>
+        </div>
+        <div class="panel glass">
+          <h4>Merges learned so far</h4>
+          <input type="range" id="mk" min="0" max="447" step="1" value="447" aria-label="Number of merges">
+          <div class="eta-row"><span>letters</span><b id="mkVal">447</b><span>all</span></div>
+          <dl class="readout"><dt>vocabulary</dt><dd id="mkVocab" class="hot">512 pieces</dd></dl>
+          <div class="row"><button class="button button-primary" id="mkPlay" type="button">Replay the merges</button></div>
+          <h4 style="margin-top:1.2rem">Merges that touched your text</h4>
+          <ul class="mlist" id="mList"></ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top:3.2rem">The galaxy: all 512 pieces, where the model put them</h3>
+      <p class="muted">Every dot is a piece, placed by its 128 learned numbers (squeezed to 3D). Drag to turn it, scroll or pinch to zoom, click a piece or type one. Then drag training time back to step 0 and watch the neighbourhoods form.</p>
+      <div class="land-grid">
+        <div class="gal" id="gal"><canvas id="galCv" aria-label="3D map of the 512 learned pieces"></canvas><div class="stamp"><b id="gStep">5,000</b>training step</div><p class="hint" id="galHint">drag to turn · click a piece</p></div>
+        <div class="panel glass">
+          <h4>Find a piece</h4>
+          <input class="q" id="galQ" type="text" placeholder="love, king, say, ,  …" spellcheck="false" autocomplete="off" aria-label="Find a piece">
+          <div class="presets" id="galPresets"></div>
+          <h4 style="margin-top:1rem">Training time</h4>
+          <input type="range" id="galT" min="0" max="1600" step="1" value="1600" aria-label="Training step">
+          <div class="row"><button class="button button-primary" id="galPlay" type="button">Train it from step 0</button></div>
+          <dl class="readout">
+            <dt>held-out loss</dt><dd id="gLoss">—</dd>
+            <dt>neighbours already final</dt><dd id="gAgree" class="hot">—</dd>
+          </dl>
+          <div class="meter"><i id="gMeter"></i></div>
+          <h4 style="margin-top:1.1rem" id="gNowH">Its company now</h4>
+          <div class="nbrs" id="gNow"></div>
+          <h4 style="margin-top:1rem">At the end · cosine similarity</h4>
+          <div class="nbrs" id="gEnd"></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:3.2rem">Say it backwards</h3>
+      <p class="muted">How surprised the trained model is by each piece (−log <em>p</em>, the loss), in order and reversed. The dashed line is a blind guess among 512.</p>
+      <div class="row" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem">
+        <div class="seg" id="ordWhich"><button type="button" data-v="hero" aria-pressed="true">I never learned to say it</button><button type="button" data-v="tobe" aria-pressed="false">To be, or not to be…</button></div>
+        <div class="seg" id="ordDir"><button type="button" data-v="fwd" aria-pressed="true">in order</button><button type="button" data-v="rev" aria-pressed="false">backwards</button></div>
+      </div>
+      <div class="ord glass panel"><div class="ord-row" id="ordRow"></div><dl class="readout" style="max-width:24rem"><dt>average surprise per piece</dt><dd id="ordAvg" class="hot">—</dd></dl></div>
+    </section>
+
+    <!-- ============================================================ build it -->
+    <section id="build">
+      <div class="two">
+        <div>
+          <p class="section-kicker"><span class="kicker-bar"></span>Build it yourself</p>
+          <h2>A tokenizer, from scratch, in one file.</h2>
+          <p class="lede">The season’s tokenizer with no libraries: split into words, count pairs, merge the most common, repeat. It downloads Tiny Shakespeare once, learns the same 447 merges in the same order as our model, and cuts any sentence you give it into pieces.</p>
+          <div class="row" style="margin-top:1.4rem;display:flex;gap:0.6rem;flex-wrap:wrap"><a class="button button-primary" href="lab/bpe.py" download>Download bpe.py</a></div>
+        </div>
+        <div>
+<pre id="expected"><span class="c"># Python 3.10+, nothing to install</span>
+python bpe.py
+python bpe.py "your own sentence"
+
+<span class="c"># expected (about 15 seconds)</span>
+text: 1,115,394 characters, 65 distinct
+merge   1:  ·t   (23,837 times)
+merge   2:  he   (18,203 times)
+…
+merge 447:  UCH  (233 times)
+65 characters + 447 merges = 512 pieces
+the whole text: 516,604 pieces (2.16 characters per piece)
+
+'I never learned to say it': 25 characters -> 10 pieces
+  pieces: I | ·ne | ver | ·l | ear | n | ed | ·to | ·say | ·it
+  ids:    [21, 228, 184, 90, 216, 52, 124, 96, 322, 146]</pre>
+          <p class="muted" style="font-size:0.95rem;margin-top:1rem">Try this: change <code>VOCAB = 512</code> to 1024, then 4096. Watch whole words appear as single pieces, and the characters per piece climb. Then type a word with an accent, like “café”, and see why GPT-2 starts from bytes instead of letters.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ credits -->
+    <section id="credits">
+      <p class="section-kicker"><span class="kicker-bar"></span>Credits</p>
+      <h2>Standing on their <span class="serif-accent">shoulders</span>.</h2>
+      <p class="lede">The ideas here belong to the researchers and teachers below. What this series adds is the delivery: the song, the visuals, the writing, and a real model you can inspect. If this helped, go and watch and read theirs.</p>
+      <div class="credits">
+        <div class="glass">
+          <h3>Teaching this builds on</h3>
+          <ul>
+            <li><b>Andrej Karpathy</b><span>“Let’s build the GPT Tokenizer” and <em>minbpe</em>; “Let’s build GPT” and <em>nanoGPT</em>.</span><a href="https://github.com/karpathy/minbpe" target="_blank" rel="noreferrer">github.com/karpathy/minbpe</a></li>
+            <li><b>Andrej Karpathy</b><span><em>char-rnn</em> and the Tiny Shakespeare dataset our model reads.</span><a href="https://github.com/karpathy/char-rnn" target="_blank" rel="noreferrer">github.com/karpathy/char-rnn</a></li>
+            <li><b>Grant Sanderson · 3Blue1Brown</b><span>“But what is a GPT?” (Deep learning, chapter 5): embeddings as directions in space.</span><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noreferrer">3blue1brown.com</a></li>
+            <li><b>Jay Alammar</b><span>“The Illustrated Word2vec”.</span><a href="https://jalammar.github.io/illustrated-word2vec/" target="_blank" rel="noreferrer">jalammar.github.io</a></li>
+            <li><b>Hugging Face</b><span>LLM Course, “Byte-Pair Encoding tokenization”.</span><a href="https://huggingface.co/learn/llm-course/chapter6/5" target="_blank" rel="noreferrer">huggingface.co/learn</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Research</h3>
+          <ul>
+            <li><b>Sennrich, Haddow &amp; Birch (2016)</b><span>Neural machine translation of rare words with subword units: BPE for language models.</span><a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noreferrer">arXiv:1508.07909</a></li>
+            <li><b>Gage (1994)</b><span>A new algorithm for data compression: the original byte-pair encoding.</span></li>
+            <li><b>Firth (1957)</b><span>A synopsis of linguistic theory: “You shall know a word by the company it keeps.”</span></li>
+            <li><b>Mikolov et al. (2013)</b><span>Efficient estimation of word representations in vector space: word2vec.</span><a href="https://arxiv.org/abs/1301.3781" target="_blank" rel="noreferrer">arXiv:1301.3781</a></li>
+            <li><b>Vaswani et al. (2017)</b><span>Attention is all you need: token plus position embeddings.</span><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noreferrer">arXiv:1706.03762</a></li>
+            <li><b>Radford et al. (2019)</b><span>Language models are unsupervised multitask learners: GPT-2 and byte-level BPE.</span><a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noreferrer">openai.com</a></li>
+            <li><b>van der Maaten &amp; Hinton (2008)</b><span>Visualizing data using t-SNE: how the galaxy is drawn.</span><a href="https://www.jmlr.org/papers/v9/vandermaaten08a.html" target="_blank" rel="noreferrer">jmlr.org</a></li>
+          </ul>
+        </div>
+        <div class="glass">
+          <h3>Production</h3>
+          <ul>
+            <li><b>mexicat · pdoom-video</b><span>The MIT-licensed music-video engine this series is built on. Its song and lyrics are not used.</span><a href="https://github.com/mexicat/pdoom-video" target="_blank" rel="noreferrer">github.com/mexicat/pdoom-video</a></li>
+            <li><b>ACE-Step 1.5</b><span>Open-source music model (Apache-2.0) that sang our lyrics.</span><a href="https://github.com/ace-step/ACE-Step-1.5" target="_blank" rel="noreferrer">github.com/ace-step/ACE-Step-1.5</a></li>
+            <li><b>Kokoro-82M</b><span>Open-weight text-to-speech model (Apache-2.0) that narrates the chapter.</span><a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noreferrer">github.com/hexgrad/kokoro</a></li>
+            <li><b>PyTorch · scikit-learn</b><span>Trained the season’s model; drew its maps (t-SNE, k-means colours).</span></li>
+            <li><b>Demucs · MMS forced alignment · Whisper</b><span>Used to separate the vocals, time every word, and check the lyrics are sung.</span></li>
+            <li><b>Parvish Gajjar, with Claude</b><span>Lyrics, visuals, writing, and the season’s model.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ next -->
+    <section>
+      <div class="next glass" id="next">
+        <div>
+          <p class="section-kicker" style="margin:0"><span class="kicker-bar"></span>Up next · Season 2 · Chapter 2</p>
+          <h3>Attention: how every piece looks at every other piece, and decides which ones matter.</h3>
+        </div>
+        <a class="button button-secondary" href="/learn/">All chapters</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-row">
+      <p class="footer-name">Parvish Gajjar</p>
+      <p class="footer-meta">How AI Works · Season 2 · Chapter 1</p>
+    </div>
+  </footer>
+
+  <script src="/learn/series.js?v=6"></script>
+  <script src="/learn/player.js?v=4" defer></script>
+  <script src="chapter.js?v=1" defer></script>
+</body>
+</html>

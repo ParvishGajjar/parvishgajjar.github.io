@@ -21,8 +21,9 @@ window.SERIES = {
       n: 2, title: 'Transformers: Build a GPT',
       blurb: 'The 2017 invention behind ChatGPT, built up piece by piece.',
       chapters: [
-        { n: 1, id: 's2c1', title: 'Pieces of a Sentence', status: 'next', blurb: 'Tokens and embeddings: how text becomes numbers.' },
-        { n: 2, id: 's2c2', title: 'Attention', status: 'planned', blurb: 'How every word looks at every other word; the idea that changed everything.' },
+        { n: 1, id: 's2c1', title: 'Pieces of a Sentence', song: 'Pieces of a Sentence', status: 'live', url: '/learn/s2/c1/',
+          thumb: '/learn/s2/c1/media/poster-sm.jpg', blurb: 'Tokens and embeddings: a tokenizer learned from Shakespeare, and the 128-number places a GPT learns for its 512 pieces.' },
+        { n: 2, id: 's2c2', title: 'Attention', status: 'next', blurb: 'How every word looks at every other word; the idea that changed everything.' },
         { n: 3, id: 's2c3', title: 'One More Token', status: 'planned', blurb: 'Pretraining a tiny GPT on next-word prediction.' },
         { n: 4, id: 's2c4', title: 'Does It Really Know?', status: 'planned', blurb: 'Evaluation, generalisation and why models make things up.' },
       ],
